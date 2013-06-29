@@ -3,33 +3,87 @@
 import config
 from helper import *
 
-import errno
-
 class Project:
     def __init__(self):
         self._sites = []
+        self._layouts = {}
 
     def read(self):
-        # Get all directories -> this are the sites
-        sites = listFolders(config.dirs["sites"])
-
-        # Add sites to list
-        for s in sites:
-            site = Site(s)
-            self._sites.append(site)
-            site.read()
+        self._readLayouts()
+        self._readSites()
 
     def copy(self):
         for s in self._sites:
             s.copy()
 
-class Site:
+    def getLayoutByName(self, name = None):
+        if not name:
+            name = config.layout["default"]
+
+        if name in self._layouts:
+            return self._layouts[name]
+
+        return None
+
+    def _readLayouts(self):
+        # Get all directories -> this are the layouts
+        layouts = listFolders(config.dirs["layouts"])
+
+        # Add sites to list
+        for name in layouts:
+            layout = Layout(name)
+            self._layouts[name] = layout
+            layout.read()
+
+    def _readSites(self):
+        # Get all directories -> this are the sites
+        sites = listFolders(config.dirs["sites"])
+
+        # Add sites to list
+        for s in sites:
+            site = Site(s, self)
+            self._sites.append(site)
+            site.read()
+
+class Layout:
     def __init__(self, name):
+        self._name = name
+
+        self._dir = os.path.join(config.dirs["layouts"], name)
+
+        self._head = os.path.join(self._dir, config.layout["head"])
+        self._bottom = os.path.join(self._dir, config.layout["bottom"])
+
+        self._other_files = []
+
+        debug("Found layout: " + self._name)
+
+    def read(self):
+        for f in findFiles(self._dir, [".html"]):
+            debug("\tFound file: " + f)
+            self._other_files.append(OtherFile(self._dir, os.path.relpath(f, self._dir), None))
+
+    def copy(self, dest):
+        for f in self._other_files:
+            f.copy(dest)
+
+    def getHead(self):
+        return self._head
+
+    def getBottom(self):
+        return self._bottom
+
+class Site:
+    def __init__(self, name, project):
         self._name = name
 
         self._pages = []
 
         self._other_files = []
+
+        self._layout_name = None # TODO: Read from config
+
+        self._project = project
 
         debug("Found site: " + self._name)
 
@@ -39,6 +93,15 @@ class Site:
     def getAbsDestPath(self):
         return os.path.join(config.dirs["out"], self._name)
 
+    def getLayout(self):
+        return self._project.getLayoutByName(self._layout_name)
+
+    def getLayoutHead(self):
+        return self.getLayout().getHead()
+
+    def getLayoutBottom(self):
+        return self.getLayout().getBottom()
+
     def read(self):
         self._readHelper(self.getAbsSrcPath(), [])
 
@@ -47,21 +110,12 @@ class Site:
         for p in self._pages:
             p.copy()
 
-        # Stylesheet
-        copyFileToDir(config.layout["css"], self.getAbsDestPath())
+        # Layout
+        self.getLayout().copy(self.getAbsDestPath())
 
         # Other files
         for f in self._other_files:
-            src_path = self.getAbsSrcPath()
-            for p in f:
-                src_path = os.path.join(src_path, p)
-
-            dest_dir = self.getAbsDestPath()
-            if len(f) > 1:
-                for p in f[0:-1]:
-                    dest_dir = os.path.join(dest_dir, p)
-
-            copyFile(src_path, dest_dir)
+            f.copy()
 
     def _readHelper(self, dir_path, path):
         files = os.listdir(dir_path)
@@ -99,12 +153,8 @@ class Site:
                 self._readHelper(absf, new_path)
             # Unknown object
             else:
-                name = os.path.basename(absf)
-
-                new_path = path[:]
-                new_path.append(name)
-
-                self._other_files.append(new_path)
+                tmp = OtherFile(self.getAbsSrcPath(), os.path.relpath(absf, self.getAbsSrcPath()), self.getAbsDestPath())
+                self._other_files.append(tmp)
 
                 debug("\tFound unkown object: " + absf)
 
@@ -180,18 +230,14 @@ class Page:
 
     def copy(self):
         # Create directory
-        try:
-            os.makedirs(os.path.dirname(self._getDestFile()))
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        mkdir(os.path.dirname(self._getDestFile()))
 
         # Write to file
         outf = open(self._getDestFile(), 'w')
 
-        self._appendAndReplaceFile(outf, config.layout["head"])
+        self._appendAndReplaceFile(outf, self._site.getLayoutHead())
         self._appendAndReplaceFile(outf, self._absSrc)
-        self._appendAndReplaceFile(outf, config.layout["bottom"])
+        self._appendAndReplaceFile(outf, self._site.getLayoutBottom())
 
         outf.close()
 
@@ -267,3 +313,22 @@ class Page:
                     result += " > " + cleverCapitalize(t)
 
         return result
+
+class OtherFile:
+    """ Copy other file """
+    def __init__(self, src_path_root, src_path_rel, dest_dir):
+        """ src_path_root / src_path_rel ==> dest_dir / src_path_rel """
+        self._src_path_root = src_path_root
+        self._src_path_rel = src_path_rel
+        self._dest_dir = dest_dir
+
+    def copy(self, to=None):
+        if not to:
+            to = self._dest_dir
+
+        # Create directory
+        out_file = os.path.join(to, self._src_path_rel)
+        out_dir = os.path.dirname(out_file)
+        mkdir(out_dir)
+
+        copyFile(os.path.join(self._src_path_root, self._src_path_rel), out_dir)

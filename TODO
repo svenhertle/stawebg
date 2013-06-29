@@ -1,8 +1,6 @@
-* Layout refactoring -> class Layout
 * Configuration for each site (JSON?)
     * Page title
     * Style per site
-* Class OtherFile (for copy)
 * Hidden directories
 * Markdown
 * Sort menu items

@@ -2,6 +2,11 @@
 
 import os
 import shutil
+import errno
+
+#
+# File IO
+#
 
 def listFolders(path):
     # Get absolute names of all files
@@ -9,7 +14,7 @@ def listFolders(path):
 
     result = []
 
-    # Make absolute pathes and check if directory
+    # Join paths and check if directory
     for f in files:
         absf = os.path.join(path, f)
         if os.path.isdir(absf):
@@ -17,31 +22,52 @@ def listFolders(path):
 
     return result
 
-def isPageFile(path):
-    return os.path.isfile(path) and path.endswith(".html") # TODO: move .html to config
+def findFiles(path, exclude_ext=[]):
+    # Get absolute names of all files
+    files = os.listdir(path)
 
-def cleverCapitalize(text):
-    if len(text) == 0:
-        return ""
-    elif len(text) == 1:
-        return text.upper()
-    else:
-        return text[0].upper() + text[1:]
+    result = []
 
-def copyFileToDir(src, dir):
-    tmp_in = open(src, 'r')
-    tmp_out = open(os.path.join(dir, os.path.basename(src)), 'w')
+    # Join paths and go into directories
+    for f in files:
+        absf = os.path.join(path, f)
 
-    for l in tmp_in:
-        tmp_out.write(l)
+        if os.path.isdir(absf):
+            result.extend(findFiles(absf))
+        else:
+            if not stringEndsWith(absf, exclude_ext):
+                result.append(absf)
 
-    tmp_in.close()
-    tmp_out.close()
+
+    return result
 
 def copyFile(src, dir):
     dest = os.path.join(dir, os.path.basename(src))
 
     shutil.copy(src, dest)
+
+def mkdir(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+def isPageFile(path):
+    return os.path.isfile(path) and path.endswith(".html") # TODO: move .html to config
+
+def listToPath(lst, prefix=""):
+    tmp = prefix
+
+    for l in lst:
+        tmp = os.path.join(tmp, l)
+
+    return tmp
+
+
+#
+# Lists
+#
 
 def listBeginsWith(lst, begin):
     if len(begin) > len(lst):
@@ -62,6 +88,29 @@ def listBeginsWith(lst, begin):
 def listInsertUnique(lst, item):
     if not item in lst:
         lst.append(item)
+
+#
+# Strings
+#
+
+def cleverCapitalize(text):
+    if len(text) == 0:
+        return ""
+    elif len(text) == 1:
+        return text.upper()
+    else:
+        return text[0].upper() + text[1:]
+
+def stringEndsWith(string, extensions):
+    for e in extensions:
+        if string.endswith(e):
+            return True
+
+    return False
+
+#
+# Debug
+#
 
 def debug(text):
     print(text)

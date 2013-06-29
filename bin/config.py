@@ -1,15 +1,40 @@
 #!/usr/bin/python3
 
-import os
+from os.path import *
+
+#
+# Directories
+#
 
 dirs = {}
-dirs["bin"]         = os.path.abspath(os.path.dirname(__file__))
-dirs["root"]        = os.path.dirname(dirs["bin"])
-dirs["sites"]       = os.path.join(dirs["root"], "sites")
-dirs["layout"]      = os.path.join(dirs["root"], "layout")
-dirs["out"]         = os.path.join(dirs["root"], "out")
+
+# Diectory with binary files
+dirs["bin"]         = abspath(dirname(__file__))
+
+# Root directory of stawebg
+dirs["root"]        = dirname(dirs["bin"])
+
+# Directory with site content
+dirs["sites"]       = join(dirs["root"], "sites")
+
+# Directory with layout files
+dirs["layouts"]      = join(dirs["root"], "layouts")
+
+# Directory for output
+dirs["out"]         = join(dirs["root"], "out")
+
+
+#
+# Layout
+#
 
 layout = {}
-layout["head"]      = os.path.join(dirs["layout"], "default", "head.html")
-layout["bottom"]    = os.path.join(dirs["layout"], "default", "bottom.html")
-layout["css"]       = os.path.join(dirs["layout"], "default", "stylesheet.css") #TODO: support more than one css file
+
+# Default layout
+layout["default"] = "default"
+
+# File with begin of html code
+layout["head"]      = "head.html"
+
+# File with end of html code
+layout["bottom"]    = "bottom.html"
