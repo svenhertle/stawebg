@@ -75,15 +75,18 @@ class Layout:
 
 class Site:
     def __init__(self, name, project):
+        self._project = project
+
         self._name = name
 
         self._pages = []
 
         self._other_files = []
 
-        self._layout_name = None # TODO: Read from config
+        self._layout_name = None
 
-        self._project = project
+        self._sitetitle = None
+        self._sitesubtitle = None
 
         debug("Found site: " + self._name)
 
@@ -102,10 +105,27 @@ class Site:
     def getLayoutBottom(self):
         return self.getLayout().getBottom()
 
+    def getSiteTitle(self):
+        if self._sitetitle:
+            return self._sitetitle
+
+        return self._name
+
+    def getSiteSubtitle(self):
+        if self._sitesubtitle:
+            return self._sitesubtitle
+
+        return ""
+
     def read(self):
+        self._readConfig()
         self._readHelper(self.getAbsSrcPath(), [])
 
     def copy(self):
+        # Check if layout exists
+        if not self.getLayout():
+            fail("Can't find layout: " + self._layout_name + "\nAbort.")
+
         # Pages
         for p in self._pages:
             p.copy()
@@ -116,6 +136,19 @@ class Site:
         # Other files
         for f in self._other_files:
             f.copy()
+
+    def _readConfig(self):
+        filename = os.path.join(self.getAbsSrcPath(), config.config["site"])
+        if os.path.isfile(filename):
+            json = jsonFromFile(filename)
+
+            if json:
+                if "title" in json:
+                    self._sitetitle = json["title"]
+                if "subtitle" in json:
+                    self._sitesubtitle = json["subtitle"]
+                if "layout" in json:
+                    self._layout_name = json["layout"]
 
     def _readHelper(self, dir_path, path):
         files = os.listdir(dir_path)
@@ -135,7 +168,7 @@ class Site:
 
                 is_index = True
                 new_path = path[:]
-                if name != "index.html": #TODO: -> config
+                if not name in config.files["index"]:
                     is_index = False
                     new_path.append(os.path.splitext(name)[0])
 
@@ -153,10 +186,11 @@ class Site:
                 self._readHelper(absf, new_path)
             # Unknown object
             else:
-                tmp = OtherFile(self.getAbsSrcPath(), os.path.relpath(absf, self.getAbsSrcPath()), self.getAbsDestPath())
-                self._other_files.append(tmp)
+                if not stringEndsWith(absf, config.files["exclude"]):
+                    tmp = OtherFile(self.getAbsSrcPath(), os.path.relpath(absf, self.getAbsSrcPath()), self.getAbsDestPath())
+                    self._other_files.append(tmp)
 
-                debug("\tFound unkown object: " + absf)
+                    debug("\tFound unkown object: " + absf)
 
     def createMenu(self, cur_page):
         return self._createMenuHelper(1, cur_page, False)
@@ -258,6 +292,12 @@ class Page:
         # %TITLE%
         new = new.replace("%TITLE%", self._getTitle())
 
+        # %SITETITLE%
+        new = new.replace("%SITETITLE%", self._site.getSiteTitle())
+
+        # %SITESUBTITLE%
+        new = new.replace("%SITESUBTITLE%", self._site.getSiteSubtitle())
+
         # %MENU%
         new = new.replace("%MENU%", self._site.createMenu(self))
 
@@ -269,7 +309,7 @@ class Page:
         for p in self._path:
             result = os.path.join(result, p)
 
-        return os.path.join(result, "index.html") #TODO: -> config
+        return os.path.join(result, "index.html") #TODO: -> config?
 
     def getRootLink(self):
         return "../" * len(self._path)
@@ -296,14 +336,14 @@ class Page:
 
     def getShortTitle(self):
         if len(self._path) == 0:
-            return "Home" # TODO: use page title
+            return "Home" # TODO: use page title?
         else:
             last = len(self._path) - 1
             return cleverCapitalize(self._path[last])
 
     def _getTitle(self):
         if len(self._path) == 0:
-            return "Home" # TODO: use page title
+            return "Home" # TODO: use page title?
         else:
             result = ""
             for t in self._path:

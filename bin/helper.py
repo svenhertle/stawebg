@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 
 import os
+import sys
 import shutil
 import errno
+import json
 
 #
 # File IO
@@ -64,6 +66,11 @@ def listToPath(lst, prefix=""):
 
     return tmp
 
+def jsonFromFile(filename):
+    with open(filename, 'r') as f:
+        return json.load(f)
+
+    return None
 
 #
 # Lists
@@ -109,8 +116,12 @@ def stringEndsWith(string, extensions):
     return False
 
 #
-# Debug
+# Debug and errors
 #
 
 def debug(text):
     print(text)
+
+def fail(text):
+    print(text, file=sys.stderr)
+    sys.exit(1)

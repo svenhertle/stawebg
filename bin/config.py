@@ -38,3 +38,24 @@ layout["head"]      = "head.html"
 
 # File with end of html code
 layout["bottom"]    = "bottom.html"
+
+#
+# Site config
+#
+
+config = {}
+
+# Filename of main configuration file of site
+config["site"] = "config.sc"
+
+#
+# Files to include and exclude
+#
+
+files = {}
+
+# Don't copy files with this extensions
+files["exclude"] = [".sc"]
+
+# Index files
+files["index"] = ["index.html"]
