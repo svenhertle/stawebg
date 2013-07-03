@@ -1,19 +1,4 @@
-stawebg
-=======
-
-stawebg is a static website generator written in Python.
-
-The software isn't ready for daily use yet.
-
-Author
-------
-
-Sven Hertle (<sven.hertle@googlemail.com>)
-
-License
--------
-
-Copyright (c) 2013 Sven Hertle (<sven.hertle@googlemail.com>)
+Copyright (c) 2013 Sven Hertle <sven.hertle@googlemail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
