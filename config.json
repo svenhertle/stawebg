@@ -6,7 +6,6 @@
 		"out":		"out"
 	},
 	"layout": {
-		"default":	"default",
 		"head":		"head.html",
 		"bottom":	"bottom.html"
 	},

@@ -21,14 +21,8 @@ class Project:
         for s in self._sites:
             s.copy()
 
-    def getLayoutByName(self, name = None):
-        if not name:
-            name = config['layout']['default']
-
-        if name in self._layouts:
-            return self._layouts[name]
-
-        return None
+    def getLayoutByName(self, name = 'default'):
+        return self._layouts.get(name)
 
     # Add all layouts to list
     def _readLayouts(self):
