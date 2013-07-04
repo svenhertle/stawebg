@@ -65,18 +65,12 @@ class Layout:
 class Site:
     def __init__(self, name, project):
         self._project = project
-
         self._name = name
-
         self._pages = []
-
         self._other_files = []
-
         self._layout_name = None
-
         self._sitetitle = None
         self._sitesubtitle = None
-
         debug("Found site: " + self._name)
 
     def getAbsSrcPath(self):
@@ -128,16 +122,12 @@ class Site:
 
     def _readConfig(self):
         filename = os.path.join(self.getAbsSrcPath(), config['config']["site"])
-        if os.path.isfile(filename):
-            json = jsonFromFile(filename)
-
-            if json:
-                if "title" in json:
-                    self._sitetitle = json["title"]
-                if "subtitle" in json:
-                    self._sitesubtitle = json["subtitle"]
-                if "layout" in json:
-                    self._layout_name = json["layout"]
+        json = {}
+        with open(filename, 'r') as f:
+            json = json.load(f)
+            self._sitetitle = json.get("title")
+            self._sitesubtitle = json.get("subtitle")
+            self._layout_name = json.get("layout")
 
     def _readHelper(self, dir_path, path):
         files = os.listdir(dir_path)

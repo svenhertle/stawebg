@@ -66,12 +66,6 @@ def listToPath(lst, prefix=""):
 
     return tmp
 
-def jsonFromFile(filename):
-    with open(filename, 'r') as f:
-        return json.load(f)
-
-    return None
-
 #
 # Lists
 #
