@@ -1,12 +1,17 @@
 #!/usr/bin/python3
 
-import config
 from helper import *
+import json
+
+config = {}
 
 class Project:
     def __init__(self):
+        global config
         self._sites = []
         self._layouts = {}
+        with open('config.json', 'r') as conff:
+            config = json.load(conff)
 
     def read(self):
         self._readLayouts()
@@ -18,7 +23,7 @@ class Project:
 
     def getLayoutByName(self, name = None):
         if not name:
-            name = config.layout["default"]
+            name = config['layout']['default']
 
         if name in self._layouts:
             return self._layouts[name]
@@ -27,14 +32,14 @@ class Project:
 
     # Add all layouts to list
     def _readLayouts(self):
-        for name in listFolders(config.dirs["layouts"]):
+        for name in listFolders(config['dirs']['layouts']):
             layout = Layout(name)
             self._layouts[name] = layout
             layout.read()
 
     # Add all site directories to list
     def _readSites(self):
-        for s in listFolders(config.dirs["sites"]):
+        for s in listFolders(config['dirs']['sites']):
             site = Site(s, self)
             self._sites.append(site)
             site.read()
@@ -43,10 +48,10 @@ class Layout:
     def __init__(self, name):
         self._name = name
 
-        self._dir = os.path.join(config.dirs["layouts"], name)
+        self._dir = os.path.join(config['dirs']['layouts'], name)
 
-        self._head = os.path.join(self._dir, config.layout["head"])
-        self._bottom = os.path.join(self._dir, config.layout["bottom"])
+        self._head = os.path.join(self._dir, config['layout']["head"])
+        self._bottom = os.path.join(self._dir, config['layout']["bottom"])
 
         self._other_files = []
 
@@ -85,10 +90,10 @@ class Site:
         debug("Found site: " + self._name)
 
     def getAbsSrcPath(self):
-        return os.path.join(config.dirs["sites"], self._name)
+        return os.path.join(config['dirs']["sites"], self._name)
 
     def getAbsDestPath(self):
-        return os.path.join(config.dirs["out"], self._name)
+        return os.path.join(config['dirs']["out"], self._name)
 
     def getLayout(self):
         return self._project.getLayoutByName(self._layout_name)
@@ -132,7 +137,7 @@ class Site:
             f.copy()
 
     def _readConfig(self):
-        filename = os.path.join(self.getAbsSrcPath(), config.config["site"])
+        filename = os.path.join(self.getAbsSrcPath(), config['config']["site"])
         if os.path.isfile(filename):
             json = jsonFromFile(filename)
 
@@ -162,7 +167,7 @@ class Site:
 
                 is_index = True
                 new_path = path[:]
-                if not name in config.files["index"]:
+                if not name in config['files']["index"]:
                     is_index = False
                     new_path.append(os.path.splitext(name)[0])
 
@@ -180,7 +185,7 @@ class Site:
                 self._readHelper(absf, new_path)
             # Unknown object
             else:
-                if not stringEndsWith(absf, config.files["exclude"]):
+                if not stringEndsWith(absf, config['files']["exclude"]):
                     tmp = OtherFile(self.getAbsSrcPath(), os.path.relpath(absf, self.getAbsSrcPath()), self.getAbsDestPath())
                     self._other_files.append(tmp)
 

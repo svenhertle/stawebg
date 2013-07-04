@@ -1,0 +1,20 @@
+{
+	"dirs": {
+		"bin":		"bin",
+		"sites":	"sites",
+		"layouts":	"layouts",
+		"out":		"out"
+	},
+	"layout": {
+		"default":	"default",
+		"head":		"head.html",
+		"bottom":	"bottom.html"
+	},
+	"config": {
+		"site":		"config.sc"
+	},
+	"files": {
+		"exclude":	".sc",
+		"index":	"index.html"
+	}
+}
