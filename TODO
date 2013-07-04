@@ -1,12 +1,7 @@
 * config.sc -> _config.json
     -> Don't copy files with _ as prefix (except html files)
 * setup.py
-* New directory structure
-    stawebg
-    data
-    setup.py
-    README.md
-    ...
+* Add parameter for directory
 * Hidden directories
 * Markdown
 * Sort menu items (->prefixes)

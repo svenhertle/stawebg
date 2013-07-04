@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from helper import *
+from stawebg.helper import *
 import json
 
 config = {}
