@@ -13,7 +13,7 @@
 		"site":		"config.sc"
 	},
 	"files": {
-		"exclude":	".sc",
+		"exclude":	[".sc"],
 		"index":	"index.html"
 	}
 }
