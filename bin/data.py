@@ -27,9 +27,8 @@ class Project:
     # Add all layouts to list
     def _readLayouts(self):
         for name in listFolders(config['dirs']['layouts']):
-            layout = Layout(name)
-            self._layouts[name] = layout
-            layout.read()
+            self._layouts[name] = Layout(name)
+            self._layouts[name].read()
 
     # Add all site directories to list
     def _readSites(self):
@@ -41,12 +40,9 @@ class Project:
 class Layout:
     def __init__(self, name):
         self._name = name
-
         self._dir = os.path.join(config['dirs']['layouts'], name)
-
         self._head = os.path.join(self._dir, config['layout']["head"])
         self._bottom = os.path.join(self._dir, config['layout']["bottom"])
-
         self._other_files = []
 
         debug("Found layout: " + self._name)
