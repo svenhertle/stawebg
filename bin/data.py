@@ -25,22 +25,16 @@ class Project:
 
         return None
 
+    # Add all layouts to list
     def _readLayouts(self):
-        # Get all directories -> this are the layouts
-        layouts = listFolders(config.dirs["layouts"])
-
-        # Add sites to list
-        for name in layouts:
+        for name in listFolders(config.dirs["layouts"]):
             layout = Layout(name)
             self._layouts[name] = layout
             layout.read()
 
+    # Add all site directories to list
     def _readSites(self):
-        # Get all directories -> this are the sites
-        sites = listFolders(config.dirs["sites"])
-
-        # Add sites to list
-        for s in sites:
+        for s in listFolders(config.dirs["sites"]):
             site = Site(s, self)
             self._sites.append(site)
             site.read()
