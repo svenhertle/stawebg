@@ -122,12 +122,12 @@ class Site:
 
     def _readConfig(self):
         filename = os.path.join(self.getAbsSrcPath(), config['config']["site"])
-        json = {}
+        j = {}
         with open(filename, 'r') as f:
-            json = json.load(f)
-            self._sitetitle = json.get("title")
-            self._sitesubtitle = json.get("subtitle")
-            self._layout_name = json.get("layout")
+            j = json.load(f)
+            self._sitetitle = j.get("title")
+            self._sitesubtitle = j.get("subtitle")
+            self._layout_name = j.get("layout")
 
     def _readHelper(self, dir_path, path):
         files = os.listdir(dir_path)

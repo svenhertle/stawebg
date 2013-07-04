@@ -4,7 +4,6 @@ import os
 import sys
 import shutil
 import errno
-import json
 
 #
 # File IO
