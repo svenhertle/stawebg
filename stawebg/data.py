@@ -10,6 +10,10 @@ class Project:
         global config
         self._sites = []
         self._layouts = {}
+
+        if not os.path.isfile("config.json"):
+            fail("Can't find config.json")
+
         with open('config.json', 'r') as conff:
             config = json.load(conff)
 
