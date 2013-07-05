@@ -1,0 +1,6 @@
+include README.md LICENSE TODO
+
+include MANIFEST.in
+
+graft data
+prune data/out
