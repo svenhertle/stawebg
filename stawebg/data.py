@@ -139,10 +139,9 @@ class Site:
         # Make absolute pathes and check if it's a page
         for f in files:
             absf = os.path.join(dir_path, f)
+            name = os.path.basename(absf)
             # HTML File -> Page
             if isPageFile(absf):
-                name = os.path.basename(absf)
-
                 # Hidden files begin with _
                 hidden = False
                 if name.startswith("_") and len(name) > 1:
@@ -161,15 +160,13 @@ class Site:
                 self._pages.append(page)
             # Directory -> Go inside
             elif os.path.isdir(absf):
-                name = os.path.basename(absf)
-
                 new_path = path[:]
                 new_path.append(name)
 
                 self._readHelper(absf, new_path)
             # Unknown object
             else:
-                if absf.startswith("_") or not stringEndsWith(absf, config["files"]["exclude"]):
+                if not (name.startswith("_") or stringEndsWith(absf, config["files"]["exclude"])):
                     tmp = OtherFile(self.getAbsSrcPath(), os.path.relpath(absf, self.getAbsSrcPath()), self.getAbsDestPath())
                     self._other_files.append(tmp)
 

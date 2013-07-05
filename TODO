@@ -1,5 +1,3 @@
-* config.sc -> _config.json
-    -> Don't copy files with _ as prefix (except html files)
 * setup.py
 * Add parameter for directory
 * Hidden directories
