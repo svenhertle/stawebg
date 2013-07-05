@@ -1,6 +1,5 @@
 {
 	"dirs": {
-		"bin":		"bin",
 		"sites":	"sites",
 		"layouts":	"layouts",
 		"out":		"out"
