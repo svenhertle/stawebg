@@ -25,7 +25,10 @@ class Project:
         for s in self._sites:
             s.copy()
 
-    def getLayoutByName(self, name = 'default'):
+    def getLayoutByName(self, name = None):
+        if not name:
+            name = "default"
+
         return self._layouts.get(name)
 
     # Add all layouts to list
