@@ -122,6 +122,10 @@ class Site:
 
     def _readConfig(self):
         filename = os.path.join(self.getAbsSrcPath(), config['config']["site"])
+
+        if not os.path.isfile(filename):
+            fail("Can't find config file: " + filename)
+
         j = {}
         with open(filename, 'r') as f:
             j = json.load(f)
@@ -165,7 +169,7 @@ class Site:
                 self._readHelper(absf, new_path)
             # Unknown object
             else:
-                if not stringEndsWith(absf, config['files']["exclude"]):
+                if absf.startswith("_") or not stringEndsWith(absf, config["files"]["exclude"]):
                     tmp = OtherFile(self.getAbsSrcPath(), os.path.relpath(absf, self.getAbsSrcPath()), self.getAbsDestPath())
                     self._other_files.append(tmp)
 

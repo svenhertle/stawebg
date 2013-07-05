@@ -10,10 +10,10 @@
 		"bottom":	"bottom.html"
 	},
 	"config": {
-		"site":		"config.sc"
+		"site":		"_config.json"
 	},
 	"files": {
-		"exclude":	[".sc"],
-		"index":	"index.html"
+		"index":	"index.html",
+		"exclude":	[]
 	}
 }
