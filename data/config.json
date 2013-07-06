@@ -12,7 +12,7 @@
         "site":     "_config.json"
     },
     "files": {
-        "index":    "index.html",
+        "index":    ["index.html", "index.md"],
         "content":  [".html", ".md"],
         "exclude":  []
     }

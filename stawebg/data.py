@@ -2,6 +2,7 @@
 
 from stawebg.helper import *
 import json
+import markdown
 
 config = {}
 
@@ -258,23 +259,28 @@ class Page:
         # Write to file
         outf = open(self._getDestFile(), 'w')
 
-        # TODO: Markdown
         self._appendAndReplaceFile(outf, self._site.getLayoutHead())
-        self._appendAndReplaceFile(outf, self._absSrc)
+        self._appendAndReplaceFile(outf, self._absSrc, True)
         self._appendAndReplaceFile(outf, self._site.getLayoutBottom())
 
         outf.close()
 
-    def _appendAndReplaceFile(self, to, src):
-        tmp = open(src, 'r')
-        for l in tmp:
-            new = self._replaceKeywords(l)
-            to.write(new)
-        tmp.close()
+    def _appendAndReplaceFile(self, to, src, translate=False):
+        with open(src, 'r') as f:
+            content = "".join(f.readlines())
 
-    def _replaceKeywords(self, line):
+            # Markdown
+            if translate and isMarkdown(self._absSrc):
+                content = markdown.markdown(content, output_format="xhtml")
+
+            new = self._replaceKeywords(content)
+            to.write(new)
+
+    def _replaceKeywords(self, text):
+        new = text
+
         # %ROOT%
-        new = line.replace("%ROOT%", self.getRootLink())
+        new = new.replace("%ROOT%", self.getRootLink())
 
         # %CUR%
         new = new.replace("%CUR%", self.getCurrentLink())

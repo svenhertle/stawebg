@@ -55,7 +55,7 @@ def mkdir(path):
             raise
 
 def isMarkdown(path):
-    return os.path.splitext(path)[0] == ".md"
+    return os.path.splitext(path)[1] == ".md"
 
 def listToPath(lst, prefix=""):
     tmp = prefix
