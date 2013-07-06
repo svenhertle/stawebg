@@ -1,0 +1,36 @@
+*
+{
+    font-family: verdana, helvetica, arial, sans-serif;
+}
+
+body
+{
+    color: #073642;
+    background-color: #eee8d5;
+    font-size: 99%;  /* Enables font size scaling in MSIE */
+    margin: 0;
+    padding: 0;
+}
+
+div.left
+{
+    text-align:left;
+}
+
+div.right
+{
+    text-align:right;
+}
+
+a
+{
+    color: #073642;
+
+    text-decoration: underline;
+}
+
+a:hover,
+a:active
+{
+    text-decoration: none;
+}

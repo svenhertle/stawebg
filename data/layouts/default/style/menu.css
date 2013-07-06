@@ -1,0 +1,42 @@
+#menu
+{
+    float:left;
+
+    width:14em;
+    margin: 1.5em 1em 1em 0em;
+}
+
+div#menu ul
+{
+    margin:0;
+    padding:0;
+
+    list-style: none;
+}
+
+div#menu ul ul
+{
+    margin-left:1em;
+}
+
+div#menu ul li a
+{
+    display:block;
+
+    text-decoration:none;
+
+    color: #073642;
+
+    padding:3px 3px 3px 1em;
+}
+
+div#menu ul li a:hover
+{
+    color: #eee8d5;
+    background-color: #073642;
+}
+
+div#menu ul li a.active
+{
+    font-weight:bold;
+}
