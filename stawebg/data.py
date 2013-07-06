@@ -147,8 +147,10 @@ class Site:
         for f in files:
             absf = os.path.join(dir_path, f)
             name = os.path.basename(absf)
-            # HTML File -> Page
-            if isPageFile(absf):
+            ext = os.path.splitext(absf)[1]
+
+            # HTML or Markdown File -> Page
+            if os.path.isfile(absf) and ext in config["files"]["content"]:
                 # Hidden files begin with _
                 hidden = False
                 if name.startswith("_") and len(name) > 1:
@@ -256,6 +258,7 @@ class Page:
         # Write to file
         outf = open(self._getDestFile(), 'w')
 
+        # TODO: Markdown
         self._appendAndReplaceFile(outf, self._site.getLayoutHead())
         self._appendAndReplaceFile(outf, self._absSrc)
         self._appendAndReplaceFile(outf, self._site.getLayoutBottom())
@@ -296,7 +299,7 @@ class Page:
         for p in self._path:
             result = os.path.join(result, p)
 
-        return os.path.join(result, "index.html") #TODO: -> config?
+        return os.path.join(result, "index.html")
 
     def getRootLink(self):
         return "../" * len(self._path)
@@ -323,14 +326,14 @@ class Page:
 
     def getShortTitle(self):
         if len(self._path) == 0:
-            return "Home" # TODO: use page title?
+            return "Home"
         else:
             last = len(self._path) - 1
             return cleverCapitalize(self._path[last])
 
     def _getTitle(self):
         if len(self._path) == 0:
-            return "Home" # TODO: use page title?
+            return "Home"
         else:
             result = ""
             for t in self._path:

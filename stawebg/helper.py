@@ -54,8 +54,8 @@ def mkdir(path):
         if e.errno != errno.EEXIST:
             raise
 
-def isPageFile(path):
-    return os.path.isfile(path) and path.endswith(".html") # TODO: move .html to config
+def isMarkdown(path):
+    return os.path.splitext(path)[0] == ".md"
 
 def listToPath(lst, prefix=""):
     tmp = prefix

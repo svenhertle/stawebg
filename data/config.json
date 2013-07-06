@@ -1,18 +1,19 @@
 {
-	"dirs": {
-		"sites":	"sites",
-		"layouts":	"layouts",
-		"out":		"out"
-	},
-	"layout": {
-		"head":		"head.html",
-		"bottom":	"bottom.html"
-	},
-	"config": {
-		"site":		"_config.json"
-	},
-	"files": {
-		"index":	"index.html",
-		"exclude":	[]
-	}
+    "dirs": {
+        "sites":    "sites",
+        "layouts":  "layouts",
+        "out":      "out"
+    },
+    "layout": {
+        "head":     "head.html",
+        "bottom":   "bottom.html"
+    },
+    "config": {
+        "site":     "_config.json"
+    },
+    "files": {
+        "index":    "index.html",
+        "content":  [".html", ".md"],
+        "exclude":  []
+    }
 }
