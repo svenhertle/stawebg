@@ -338,17 +338,17 @@ class Page:
             return cleverCapitalize(self._path[last])
 
     def _getTitle(self):
+        result = ""
         if len(self._path) == 0:
-            return "Home"
+            result="Home"
         else:
-            result = ""
             for t in self._path:
                 if len(result) == 0:
                     result = cleverCapitalize(t)
                 else:
                     result += " > " + cleverCapitalize(t)
 
-        return result
+        return self._site.getSiteTitle() + " > " + result
 
 class OtherFile:
     """ Copy other file """
