@@ -3,6 +3,7 @@
 from stawebg.helper import *
 import json
 import markdown
+import re
 
 config = {}
 
@@ -287,24 +288,30 @@ class Page:
         new = text
 
         # %ROOT%
-        new = new.replace("%ROOT%", self.getRootLink())
+        new = self._replaceHelper(new, "ROOT", self.getRootLink())
 
         # %CUR%
-        new = new.replace("%CUR%", self.getCurrentLink())
+        new = self._replaceHelper(new, "CUR", self.getCurrentLink())
 
         # %TITLE%
-        new = new.replace("%TITLE%", self._getTitle())
+        new = self._replaceHelper(new, "TITLE", self._getTitle())
 
         # %SITETITLE%
-        new = new.replace("%SITETITLE%", self._site.getSiteTitle())
+        new = self._replaceHelper(new, "SITETITLE", self._site.getSiteTitle())
 
         # %SITESUBTITLE%
-        new = new.replace("%SITESUBTITLE%", self._site.getSiteSubtitle())
+        new = self._replaceHelper(new, "SITESUBTITLE", self._site.getSiteSubtitle())
 
         # %MENU%
-        new = new.replace("%MENU%", self._site.createMenu(self))
+        new = self._replaceHelper(new, "MENU", self._site.createMenu(self))
 
         return new
+
+    def _replaceHelper(self, text, keyword, replace):
+        text = re.sub(r"([^%])(%" + keyword + r"%)([^%])", r"\1" + replace + r"\3", text)
+        text = text.replace("%%" + keyword + "%%", "%" + keyword + "%")
+
+        return text
 
     def _getDestFile(self):
         result = self._site.getAbsDestPath()
