@@ -34,3 +34,8 @@ a:active
 {
     text-decoration: none;
 }
+
+pre
+{
+    font-family:monospace;
+}
