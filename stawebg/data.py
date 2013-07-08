@@ -16,7 +16,10 @@ class Project:
             fail("Can't find config.json")
 
         with open('config.json', 'r') as conff:
-            config = json.load(conff)
+            try:
+                config = json.load(conff)
+            except Exception as e:
+                fail("Error parsing JSON file: " + str(e))
 
     def read(self):
         self._readLayouts()
@@ -136,7 +139,11 @@ class Site:
 
         j = {}
         with open(filename, 'r') as f:
-            j = json.load(f)
+            try:
+                j = json.load(f)
+            except Exception as e:
+                fail("Error parsing JSON file: " + str(e))
+
             self._sitetitle = j.get("title")
             self._sitesubtitle = j.get("subtitle")
             self._layout_name = j.get("layout")
