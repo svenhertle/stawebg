@@ -203,16 +203,16 @@ class Site:
                 if len(p.getPath()) == 0:
                     home = p
                     continue
-                listInsertUnique(items, p)
+                items.append(p)
             # Until cur_page
             elif listBeginsWith(cur_page.getPath(), p.getPath()[0:-1]) and len(p.getPath()) == level:
-                listInsertUnique(items, p)
+                items.append(p)
             # After cur_page
             elif listBeginsWith(p.getPath(), cur_page.getPath()) and len(p.getPath()) == level:
-                listInsertUnique(items, p)
+                items.append(p)
 
         # Sort items
-        items = sorted(items, key=lambda i: i.getShortTitle())
+        items = sorted(set(items), key=lambda i: i.getShortTitle())
         if home:
             items.insert(0, home)
 

@@ -70,24 +70,14 @@ def listToPath(lst, prefix=""):
 #
 
 def listBeginsWith(lst, begin):
-    if len(begin) > len(lst):
+    if not begin or not lst:
         return False
 
-    if len(begin) == 0 and len(lst) == 0:
-        return True
-
-    if len(begin) == 0 or len(lst) == 0:
-        return False
-
-    for i,k in enumerate(begin):
-        if lst[i] != begin[i]:
+    for i,k in zip(lst, begin):
+        if i != k:
             return False
 
-    return True
-
-def listInsertUnique(lst, item):
-    if not item in lst:
-        lst.append(item)
+    return len(begin) <= len(lst)
 
 #
 # Strings
