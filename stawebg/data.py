@@ -243,11 +243,8 @@ class Site:
 class Page:
     def __init__(self, site, absPath, path, hidden, is_index):
         self._site = site
-
         self._absSrc = absPath
-
         self._path = path
-
         self._hidden = hidden
 
         # was index.html in original file structure (important for %CUR%)
