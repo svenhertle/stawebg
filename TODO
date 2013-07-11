@@ -1,3 +1,4 @@
 * Add parameter for directory
 * Hidden directories
 * Sort menu items (->prefixes)
+* Use external programs to translate to html (mapping in config.json: file extension -> program)
