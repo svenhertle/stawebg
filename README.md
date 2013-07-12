@@ -12,8 +12,9 @@ Sven Hertle (<sven.hertle@googlemail.com>)
 
 Dependencies
 ------------
-You need the Python package [markdown](https://pypi.python.org/pypi/Markdown).
-With Debian you can install it via the standard repositories, the package name is python3-markdown.
+
+You need a [markdown parser](http://daringfireball.net/projects/markdown/).
+With default configuration the markdown binary must be found in $PATH.
 
 License
 -------
