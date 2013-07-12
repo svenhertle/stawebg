@@ -15,7 +15,7 @@
         "index":    ["index.html", "index.md"],
         "content":  [".html", ".md"],
         "markup": {
-            ".md": "kramdown"
+            ".md": "markdown"
         },
         "exclude":  []
     }

@@ -281,9 +281,10 @@ class Page:
             to.write(new)
 
     def _translateMarkup(self, filename, text):
-        # TODO!
-        if isMarkdown(filename):
-            p = subprocess.Popen(["kramdown"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        extension = os.path.splitext(filename)[1]
+
+        if extension in config["files"]["markup"]:
+            p = subprocess.Popen(config["files"]["markup"][extension], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
             out, err = p.communicate(text)
 
             return out
