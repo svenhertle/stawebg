@@ -2,7 +2,7 @@
 
 from stawebg.helper import *
 import json
-import markdown
+import subprocess
 
 config = {}
 
@@ -274,11 +274,21 @@ class Page:
             content = "".join(f.readlines())
 
             # Markdown
-            if translate and isMarkdown(self._absSrc):
-                content = markdown.markdown(content, output_format="xhtml")
+            if translate:
+                content = self._translateMarkup(self._absSrc, content)
 
             new = self._replaceKeywords(content)
             to.write(new)
+
+    def _translateMarkup(self, filename, text):
+        # TODO!
+        if isMarkdown(filename):
+            p = subprocess.Popen(["kramdown"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            out, err = p.communicate(text)
+
+            return out
+
+        return text
 
     def _replaceKeywords(self, text):
         new = text
