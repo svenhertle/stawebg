@@ -287,6 +287,9 @@ class Page:
             p = subprocess.Popen(config["files"]["markup"][extension], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
             out, err = p.communicate(text)
 
+            if err != "":
+                fail(config["files"]["markup"][extension] + ": " + err)
+
             return out
 
         return text
