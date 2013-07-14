@@ -2,3 +2,4 @@
 * Hidden directories
 * Sort menu items (->prefixes)
 * Use tree as data structure for sites?
+* Whitespaces in filename/title -> no whitespaces in url
