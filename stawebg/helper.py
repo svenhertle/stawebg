@@ -9,6 +9,7 @@ import errno
 # File IO
 #
 
+
 def listFolders(path):
     # Get absolute names of all files
     files = os.listdir(path)
@@ -22,6 +23,7 @@ def listFolders(path):
             result.append(f)
 
     return result
+
 
 def findFiles(path, exclude_ext=[]):
     # Get absolute names of all files
@@ -39,13 +41,14 @@ def findFiles(path, exclude_ext=[]):
             if not stringEndsWith(absf, exclude_ext):
                 result.append(absf)
 
-
     return result
+
 
 def copyFile(src, dir):
     dest = os.path.join(dir, os.path.basename(src))
 
     shutil.copy(src, dest)
+
 
 def mkdir(path):
     try:
@@ -54,8 +57,10 @@ def mkdir(path):
         if e.errno != errno.EEXIST:
             raise
 
+
 def isMarkdown(path):
     return os.path.splitext(path)[1] == ".md"
+
 
 def listToPath(lst, prefix=""):
     tmp = prefix
@@ -69,11 +74,12 @@ def listToPath(lst, prefix=""):
 # Lists
 #
 
+
 def listBeginsWith(lst, begin):
     if not begin or not lst:
         return False
 
-    for i,k in zip(lst, begin):
+    for i, k in zip(lst, begin):
         if i != k:
             return False
 
@@ -83,6 +89,7 @@ def listBeginsWith(lst, begin):
 # Strings
 #
 
+
 def cleverCapitalize(text):
     if len(text) == 0:
         return ""
@@ -90,6 +97,7 @@ def cleverCapitalize(text):
         return text.upper()
     else:
         return text[0].upper() + text[1:]
+
 
 def stringEndsWith(string, extensions):
     for e in extensions:
@@ -102,9 +110,11 @@ def stringEndsWith(string, extensions):
 # Debug and errors
 #
 
+
 def debug(text):
     print(text)
 
+
 def fail(text):
-    print(text, file=sys.stderr)
+    sys.stderr.write(text)
     sys.exit(1)
