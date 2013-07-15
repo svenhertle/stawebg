@@ -111,10 +111,6 @@ def stringEndsWith(string, extensions):
 #
 
 
-def debug(text):
-    print(text)
-
-
 def fail(text):
     sys.stderr.write(text)
     sys.exit(1)

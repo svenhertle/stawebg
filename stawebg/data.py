@@ -58,11 +58,11 @@ class Layout:
         self._bottom = os.path.join(self._dir, config['layout']["bottom"])
         self._other_files = []
 
-        debug("Found layout: " + self._name)
+        print("Found layout: " + self._name)
 
     def read(self):
         for f in findFiles(self._dir, [".html"]):
-            debug("\tFound file: " + f)
+            print("\tFound file: " + f)
             self._other_files.append(OtherFile(self._dir,
                                                os.path.relpath(f, self._dir)))
 
@@ -86,7 +86,7 @@ class Site:
         self._layout_name = None
         self._sitetitle = None
         self._sitesubtitle = None
-        debug("Found site: " + self._name)
+        print("Found site: " + self._name)
 
     def getAbsSrcPath(self):
         return os.path.join(config['dirs']["sites"], self._name)
@@ -175,7 +175,7 @@ class Site:
                     is_index = False
                     new_path.append(os.path.splitext(name)[0])
 
-                debug("\tFound page: " + absf)
+                print("\tFound page: " + absf)
 
                 page = Page(self, absf, new_path, hidden, is_index)
                 self._pages.append(page)
@@ -194,7 +194,7 @@ class Site:
                                     self.getAbsDestPath())
                     self._other_files.append(tmp)
 
-                    debug("\tFound unkown object: " + absf)
+                    print("\tFound unkown object: " + absf)
 
     def createMenu(self, cur_page):
         return self._createMenuHelper(1, cur_page, False)
