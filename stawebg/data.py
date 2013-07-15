@@ -285,7 +285,7 @@ class Page:
 
         if extension in config["files"]["markup"]:
             p = subprocess.Popen(config["files"]["markup"][extension], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-            out, err = p.communicate(text)
+            out, err = p.communicate(text.encode())
 
             if err != "":
                 fail(config["files"]["markup"][extension] + ": " + err)
