@@ -6,6 +6,7 @@ import subprocess
 
 config = {}
 
+
 class Project:
     def __init__(self):
         global config
@@ -29,7 +30,7 @@ class Project:
         for s in self._sites:
             s.copy()
 
-    def getLayoutByName(self, name = None):
+    def getLayoutByName(self, name=None):
         if not name:
             name = "default"
 
@@ -48,6 +49,7 @@ class Project:
             self._sites.append(site)
             site.read()
 
+
 class Layout:
     def __init__(self, name):
         self._name = name
@@ -61,7 +63,8 @@ class Layout:
     def read(self):
         for f in findFiles(self._dir, [".html"]):
             debug("\tFound file: " + f)
-            self._other_files.append(OtherFile(self._dir, os.path.relpath(f, self._dir), None))
+            self._other_files.append(OtherFile(self._dir,
+                                               os.path.relpath(f, self._dir)))
 
     def copy(self, dest):
         for f in self._other_files:
@@ -72,6 +75,7 @@ class Layout:
 
     def getBottom(self):
         return self._bottom
+
 
 class Site:
     def __init__(self, name, project):
@@ -183,8 +187,11 @@ class Site:
                 self._readHelper(absf, new_path)
             # Unknown object
             else:
-                if not (name.startswith("_") or stringEndsWith(absf, config["files"]["exclude"])):
-                    tmp = OtherFile(self.getAbsSrcPath(), os.path.relpath(absf, self.getAbsSrcPath()), self.getAbsDestPath())
+                if not (name.startswith("_") or
+                        stringEndsWith(absf, config["files"]["exclude"])):
+                    tmp = OtherFile(self.getAbsSrcPath(),
+                                    os.path.relpath(absf, self.getAbsSrcPath()),
+                                    self.getAbsDestPath())
                     self._other_files.append(tmp)
 
                     debug("\tFound unkown object: " + absf)
@@ -194,21 +201,24 @@ class Site:
 
     def _createMenuHelper(self, level, cur_page, last):
         items = []
-        home = None # Add home later to begin of list of items
+        home = None  # Add home later to begin of list of items
 
         # Collect items
         for p in self._pages:
             if level == 1 and len(p.getPath()) <= 1:
-                # Home / in list -> don't add now -> add it later to the begin of the sorted list of items
+                # Home / in list -> don't add now
+                # add it later to the begin of the sorted list of items
                 if len(p.getPath()) == 0:
                     home = p
                     continue
                 items.append(p)
             # Until cur_page
-            elif listBeginsWith(cur_page.getPath(), p.getPath()[0:-1]) and len(p.getPath()) == level:
+            elif (listBeginsWith(cur_page.getPath(), p.getPath()[:-1]) and
+                  len(p.getPath()) == level):
                 items.append(p)
             # After cur_page
-            elif listBeginsWith(p.getPath(), cur_page.getPath()) and len(p.getPath()) == level:
+            elif (listBeginsWith(p.getPath(), cur_page.getPath()) and
+                  len(p.getPath()) == level):
                 items.append(p)
 
         # Sort items
@@ -217,28 +227,30 @@ class Site:
             items.insert(0, home)
 
         # Create HTML Code
-        found=False
+        found = False
         tmp = "<ul>\n"
         for p in items:
             if p == cur_page:
-                found=True
+                found = True
 
             if p.isHidden():
                 continue
 
-            active=""
+            active = ""
             if p == cur_page or listBeginsWith(cur_page.getPath(), p.getPath()):
-                active="class=\"active\""
+                active = "class=\"active\""
 
-            tmp += "<li><a href=\" " + p.getLink(cur_page) + "\" " + active + ">" + p.getShortTitle() + "</a></li>\n"
+            tmp = ''.join([tmp, "<li><a href=\" ", p.getLink(cur_page), "\" ",
+                          active, ">", p.getShortTitle(), "</a></li>\n"])
 
             # Create submenu
-            if listBeginsWith(cur_page.getPath(), p.getPath()) and not last:# and len(p.getPath()) != 0: # Subdir AND current site not yet displayed AND not home /
+            if listBeginsWith(cur_page.getPath(), p.getPath()) and not last:
                 tmp += self._createMenuHelper(level+1, cur_page, found)
 
         tmp += "</ul>\n"
 
         return tmp
+
 
 class Page:
     def __init__(self, site, absPath, path, hidden, is_index):
@@ -284,7 +296,10 @@ class Page:
         extension = os.path.splitext(filename)[1]
 
         if extension in config["files"]["markup"]:
-            p = subprocess.Popen(config["files"]["markup"][extension], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            p = subprocess.Popen(config["files"]["markup"][extension],
+                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 universal_newlines=True)
             out, err = p.communicate(text.encode())
 
             if err != "":
@@ -358,7 +373,7 @@ class Page:
     def _getTitle(self):
         result = ""
         if len(self._path) == 0:
-            result="Home"
+            result = "Home"
         else:
             for t in self._path:
                 if len(result) == 0:
@@ -368,9 +383,10 @@ class Page:
 
         return self._site.getSiteTitle() + " > " + result
 
+
 class OtherFile:
     """ Copy other file """
-    def __init__(self, src_path_root, src_path_rel, dest_dir):
+    def __init__(self, src_path_root, src_path_rel, dest_dir=None):
         """ src_path_root / src_path_rel ==> dest_dir / src_path_rel """
         self._src_path_root = src_path_root
         self._src_path_rel = src_path_rel

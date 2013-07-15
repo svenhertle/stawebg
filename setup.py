@@ -26,16 +26,15 @@ class my_install(distutils.command.install_scripts.install_scripts):
                 shutil.move(script, script[:-3])
 
 # Setup
-if __name__ == '__main__' :
+if __name__ == '__main__':
     setup(
-        name = "stawebg",
-        version = "0.1",
-        license = "MIT",
-        description = "Static website generator",
-        author = "Sven Hertle",
-        author_email = "sven.hertle@googlemail.com",
-        packages = ["stawebg"],
-        scripts = ["stawebg.py"],
-        cmdclass = {"install_scripts": my_install},
+        name="stawebg",
+        version="0.1",
+        license="MIT",
+        description="Static website generator",
+        author="Sven Hertle",
+        author_email="sven.hertle@googlemail.com",
+        packages=["stawebg"],
+        scripts=["stawebg.py"],
+        cmdclass={"install_scripts": my_install},
     )
-
