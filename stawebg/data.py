@@ -8,19 +8,24 @@ config = {}
 
 
 class Project:
-    def __init__(self):
+    def __init__(self, project_dir=""):
         global config
         self._sites = []
         self._layouts = {}
+        self._project_dir = project_dir
 
-        if not os.path.isfile("config.json"):
+        if not os.path.isfile(os.path.join(self._project_dir, "config.json")):
             fail("Can't find config.json")
 
-        with open('config.json', 'r') as conff:
+        with open(os.path.join(self._project_dir, "config.json"), "r") as conff:
             try:
                 config = json.load(conff)
             except Exception as e:
                 fail("Error parsing JSON file: " + str(e))
+
+        # Make directories absolute
+        for k in config["dirs"]:
+            config["dirs"][k] = os.path.join(self._project_dir, config["dirs"][k])
 
     def read(self):
         self._readLayouts()
