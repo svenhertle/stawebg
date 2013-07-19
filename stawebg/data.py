@@ -81,7 +81,7 @@ class Site:
     def __init__(self, name, project):
         self._project = project
         self._name = name
-        self._pages = []
+        self._root = None
         self._other_files = []
         self._layout_name = None
         self._sitetitle = None
@@ -117,7 +117,7 @@ class Site:
 
     def read(self):
         self._readConfig()
-        self._readHelper(self.getAbsSrcPath(), [])
+        self._readHelper(self.getAbsSrcPath(), self._root)
 
     def copy(self):
         # Check if layout exists
@@ -125,8 +125,7 @@ class Site:
             fail("Can't find layout: " + self._layout_name + "\nAbort.")
 
         # Pages
-        for p in self._pages:
-            p.copy()
+        self._root.copy()
 
         # Layout
         self.getLayout().copy(self.getAbsDestPath())
@@ -152,8 +151,11 @@ class Site:
             self._sitesubtitle = j.get("subtitle")
             self._layout_name = j.get("layout")
 
-    def _readHelper(self, dir_path, path):
+    def _readHelper(self, dir_path, parent):
         files = os.listdir(dir_path)
+
+        if not parent:
+            parent = self._root
 
         # Make absolute pathes and check if it's a page
         for f in files:
@@ -163,28 +165,28 @@ class Site:
 
             # HTML or Markdown File -> Page
             if os.path.isfile(absf) and ext in config["files"]["content"]:
-                # Hidden files begin with _
+                # Hidden files begin with _ # LOOK: hidden
                 hidden = False
                 if name.startswith("_") and len(name) > 1:
                     hidden = True
                     name = name[1:]
 
-                is_index = True
-                new_path = path[:]
-                if not name in config['files']["index"]:
-                    is_index = False
-                    new_path.append(os.path.splitext(name)[0])
+                # Is index file
+                is_index = name in config['files']["index"]
+
+                # Delete file extension
+                name = os.path.splitext(name)[0]
 
                 print("\tFound page: " + absf)
 
-                page = Page(self, absf, new_path, hidden, is_index)
-                self._pages.append(page)
+                newpage = Page(name, absf, self, parent, hidden, is_index)
+                if parent:
+                    parent.appendPage(newpage)
+                else:
+                    self._root = newpage
             # Directory -> Go inside
             elif os.path.isdir(absf):
-                new_path = path[:]
-                new_path.append(name)
-
-                self._readHelper(absf, new_path)
+                self._readHelper(absf, parent)
             # Unknown object
             else:
                 if not (name.startswith("_") or
@@ -196,74 +198,85 @@ class Site:
 
                     print("\tFound unkown object: " + absf)
 
-    def createMenu(self, cur_page):
-        return self._createMenuHelper(1, cur_page, False)
-
-    def _createMenuHelper(self, level, cur_page, last):
-        items = []
-        home = None  # Add home later to begin of list of items
-
-        # Collect items
-        for p in self._pages:
-            if level == 1 and len(p.getPath()) <= 1:
-                # Home / in list -> don't add now
-                # add it later to the begin of the sorted list of items
-                if len(p.getPath()) == 0:
-                    home = p
-                    continue
-                items.append(p)
-            # Until cur_page
-            elif (listBeginsWith(cur_page.getPath(), p.getPath()[:-1]) and
-                  len(p.getPath()) == level):
-                items.append(p)
-            # After cur_page
-            elif (listBeginsWith(p.getPath(), cur_page.getPath()) and
-                  len(p.getPath()) == level):
-                items.append(p)
-
-        # Sort items
-        items = sorted(set(items), key=lambda i: i.getShortTitle())
-        if home:
-            items.insert(0, home)
-
-        # Create HTML Code
-        found = False
-        tmp = "<ul>\n"
-        for p in items:
-            if p == cur_page:
-                found = True
-
-            if p.isHidden():
-                continue
-
-            active = ""
-            if p == cur_page or listBeginsWith(cur_page.getPath(), p.getPath()):
-                active = "class=\"active\""
-
-            tmp = ''.join([tmp, "<li><a href=\" ", p.getLink(cur_page), "\" ",
-                          active, ">", p.getShortTitle(), "</a></li>\n"])
-
-            # Create submenu
-            if listBeginsWith(cur_page.getPath(), p.getPath()) and not last:
-                tmp += self._createMenuHelper(level+1, cur_page, found)
-
-        tmp += "</ul>\n"
-
-        return tmp
+#    def createMenu(self, cur_page):
+#        return self._createMenuHelper(1, cur_page, False)
+#
+#    def _createMenuHelper(self, level, cur_page, last):
+#        items = []
+#        home = None  # Add home later to begin of list of items
+#
+#        # Collect items
+#        for p in self._pages:
+#            if level == 1 and len(p.getPath()) <= 1:
+#                # Home / in list -> don't add now
+#                # add it later to the begin of the sorted list of items
+#                if len(p.getPath()) == 0:
+#                    home = p
+#                    continue
+#                items.append(p)
+#            # Until cur_page
+#            elif (listBeginsWith(cur_page.getPath(), p.getPath()[:-1]) and
+#                  len(p.getPath()) == level):
+#                items.append(p)
+#            # After cur_page
+#            elif (listBeginsWith(p.getPath(), cur_page.getPath()) and
+#                  len(p.getPath()) == level):
+#                items.append(p)
+#
+#        # Sort items
+#        items = sorted(set(items), key=lambda i: i.getShortTitle())
+#        if home:
+#            items.insert(0, home)
+#
+#        # Create HTML Code
+#        found = False
+#        tmp = "<ul>\n"
+#        for p in items:
+#            if p == cur_page:
+#                found = True
+#
+#            if p.isHidden():
+#                continue
+#
+#            active = ""
+#            if p == cur_page or listBeginsWith(cur_page.getPath(), p.getPath()):
+#                active = "class=\"active\""
+#
+#            tmp = ''.join([tmp, "<li><a href=\" ", p.getLink(cur_page), "\" ",
+#                          active, ">", p.getShortTitle(), "</a></li>\n"])
+#
+#            # Create submenu
+#            if listBeginsWith(cur_page.getPath(), p.getPath()) and not last:
+#                tmp += self._createMenuHelper(level+1, cur_page, found)
+#
+#        tmp += "</ul>\n"
+#
+#        return tmp
 
 
 class Page:
-    def __init__(self, site, absPath, path, hidden, is_index):
-        self._site = site
+    def __init__(self, name, absPath, site, parent, hidden, is_index):
+        self._name = name # None -> root
         self._absSrc = absPath
-        self._path = path
+        self._site = site
         self._hidden = hidden
+        self._parent = parent
+        self._subpages = []
 
         # was index.html in original file structure (important for %CUR%)
         self._is_index = is_index
 
-    def getPath(self):
-        return self._path
+    def appendPage(self, p):
+        self._subpages.append(p)
+
+    def getPages(self):
+        return self._subpages
+
+    def getParent(self):
+        return self._parent
+
+    def getName(self):
+        return self._name
 
     def isHidden(self):
         return self._hidden
@@ -271,6 +284,8 @@ class Page:
     def copy(self):
         # Create directory
         mkdir(os.path.dirname(self._getDestFile()))
+
+        print(self._absSrc + " -> " + self._getDestFile());
 
         # Write to file
         outf = open(self._getDestFile(), 'w')
@@ -280,6 +295,10 @@ class Page:
         self._appendAndReplaceFile(outf, self._site.getLayoutBottom())
 
         outf.close()
+
+        # Copy subpages
+        for p in self._subpages:
+            p.copy()
 
     def _appendAndReplaceFile(self, to, src, translate=False):
         with open(src, 'r') as f:
@@ -319,7 +338,7 @@ class Page:
         new = new.replace("%CUR%", self.getCurrentLink())
 
         # %TITLE%
-        new = new.replace("%TITLE%", self._getTitle())
+        new = new.replace("%TITLE%", self.getTitle())
 
         # %SITETITLE%
         new = new.replace("%SITETITLE%", self._site.getSiteTitle())
@@ -328,20 +347,30 @@ class Page:
         new = new.replace("%SITESUBTITLE%", self._site.getSiteSubtitle())
 
         # %MENU%
-        new = new.replace("%MENU%", self._site.createMenu(self))
+        #new = new.replace("%MENU%", self._site.createMenu(self))
 
         return new
 
     def _getDestFile(self):
-        result = self._site.getAbsDestPath()
+        tmp_path = ""
+        parent = self.getParent()
 
-        for p in self._path:
-            result = os.path.join(result, p)
+        if parent:
+            tmp_path = os.path.join(parent.getName(), tmp_path);
+            parent = parent.getParent()
 
-        return os.path.join(result, "index.html")
+        return os.path.join(self._site.getAbsDestPath(), tmp_path, "index.html")
 
     def getRootLink(self):
-        return "../" * len(self._path)
+        tmp = ""
+
+        parent = self.getParent()
+
+        if parent:
+            tmp = tmp + "../"
+            parent = parent.getParent()
+
+        return tmp
 
     def getCurrentLink(self):
         if self._is_index:
@@ -355,8 +384,10 @@ class Page:
 
         tmp = origin.getRootLink()
 
-        for t in self.getPath():
-            tmp += t + "/"
+        parent = self.getParent()
+        if parent:
+            tmp = t + "/" + tmp
+            parent = parent.getParent()
 
         if tmp == "":
             tmp = "."
@@ -364,24 +395,17 @@ class Page:
         return tmp
 
     def getShortTitle(self):
-        if len(self._path) == 0:
+        if not self.getParent():
             return "Home"
         else:
-            last = len(self._path) - 1
-            return cleverCapitalize(self._path[last])
+            return cleverCapitalize(self.getName())
 
-    def _getTitle(self):
+    def getTitle(self):
         result = ""
-        if len(self._path) == 0:
-            result = "Home"
+        if not self.getParent():
+            return self._site.getSiteTitle() + " > " + self.getShortTitle()
         else:
-            for t in self._path:
-                if len(result) == 0:
-                    result = cleverCapitalize(t)
-                else:
-                    result += " > " + cleverCapitalize(t)
-
-        return self._site.getSiteTitle() + " > " + result
+            return self.getParent().getTitle() + " > " + self.getShortTitle()
 
 
 class OtherFile:
