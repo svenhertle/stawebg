@@ -210,60 +210,60 @@ class Site:
 
                     print("\tFound unkown object: " + absf)
 
-#    def createMenu(self, cur_page):
-#        return self._createMenuHelper(1, cur_page, False)
-#
-#    def _createMenuHelper(self, level, cur_page, last):
-#        items = []
-#        home = None  # Add home later to begin of list of items
-#
-#        # Collect items
-#        for p in self._pages:
-#            if level == 1 and len(p.getPath()) <= 1:
-#                # Home / in list -> don't add now
-#                # add it later to the begin of the sorted list of items
-#                if len(p.getPath()) == 0:
-#                    home = p
-#                    continue
-#                items.append(p)
-#            # Until cur_page
-#            elif (listBeginsWith(cur_page.getPath(), p.getPath()[:-1]) and
-#                  len(p.getPath()) == level):
-#                items.append(p)
-#            # After cur_page
-#            elif (listBeginsWith(p.getPath(), cur_page.getPath()) and
-#                  len(p.getPath()) == level):
-#                items.append(p)
-#
-#        # Sort items
-#        items = sorted(set(items), key=lambda i: i.getShortTitle())
-#        if home:
-#            items.insert(0, home)
-#
-#        # Create HTML Code
-#        found = False
-#        tmp = "<ul>\n"
-#        for p in items:
-#            if p == cur_page:
-#                found = True
-#
-#            if p.isHidden():
-#                continue
-#
-#            active = ""
-#            if p == cur_page or listBeginsWith(cur_page.getPath(), p.getPath()):
-#                active = "class=\"active\""
-#
-#            tmp = ''.join([tmp, "<li><a href=\" ", p.getLink(cur_page), "\" ",
-#                          active, ">", p.getShortTitle(), "</a></li>\n"])
-#
-#            # Create submenu
-#            if listBeginsWith(cur_page.getPath(), p.getPath()) and not last:
-#                tmp += self._createMenuHelper(level+1, cur_page, found)
-#
-#        tmp += "</ul>\n"
-#
-#        return tmp
+    def createMenu(self, cur_page):
+        return self._root.createMenu(cur_page)
+
+    #def _createMenuHelper(self, level, cur_page, last):
+    #    items = []
+    #    home = None  # Add home later to begin of list of items
+
+    #    # Collect items
+    #    for p in self._pages:
+    #        if level == 1 and len(p.getPath()) <= 1:
+    #            # Home / in list -> don't add now
+    #            # add it later to the begin of the sorted list of items
+    #            if len(p.getPath()) == 0:
+    #                home = p
+    #                continue
+    #            items.append(p)
+    #        # Until cur_page
+    #        elif (listBeginsWith(cur_page.getPath(), p.getPath()[:-1]) and
+    #              len(p.getPath()) == level):
+    #            items.append(p)
+    #        # After cur_page
+    #        elif (listBeginsWith(p.getPath(), cur_page.getPath()) and
+    #              len(p.getPath()) == level):
+    #            items.append(p)
+
+    #    # Sort items
+    #    items = sorted(set(items), key=lambda i: i.getShortTitle())
+    #    if home:
+    #        items.insert(0, home)
+
+    #    # Create HTML Code
+    #    found = False
+    #    tmp = "<ul>\n"
+    #    for p in items:
+    #        if p == cur_page:
+    #            found = True
+
+    #        if p.isHidden():
+    #            continue
+
+    #        active = ""
+    #        if p == cur_page or listBeginsWith(cur_page.getPath(), p.getPath()):
+    #            active = "class=\"active\""
+
+    #        tmp = ''.join([tmp, "<li><a href=\" ", p.getLink(cur_page), "\" ",
+    #                      active, ">", p.getShortTitle(), "</a></li>\n"])
+
+    #        # Create submenu
+    #        if listBeginsWith(cur_page.getPath(), p.getPath()) and not last:
+    #            tmp += self._createMenuHelper(level+1, cur_page, found)
+
+    #    tmp += "</ul>\n"
+
+    #    return tmp
 
 
 class Page:
@@ -369,7 +369,7 @@ class Page:
         new = new.replace("%SITESUBTITLE%", self._site.getSiteSubtitle())
 
         # %MENU%
-        #new = new.replace("%MENU%", self._site.createMenu(self))
+        new = new.replace("%MENU%", self._site.createMenu(self))
 
         return new
 
@@ -390,7 +390,6 @@ class Page:
         tmp = ""
 
         parent = self.getParent()
-
         while parent:
             tmp = tmp + "../"
             parent = parent.getParent()
@@ -404,15 +403,16 @@ class Page:
             return "../"
 
     def getLink(self, origin=None):
+        tmp = ""
+        parent = self
+        while parent and not parent.isRoot():
+            tmp = parent.getName() + "/" + tmp
+            parent = parent.getParent()
+
         if not origin:
             origin = self
 
-        tmp = origin.getRootLink()
-
-        parent = self.getParent()
-        while parent:
-            tmp = t + "/" + tmp
-            parent = parent.getParent()
+        tmp = origin.getRootLink() + tmp
 
         if tmp == "":
             tmp = "."
@@ -431,6 +431,47 @@ class Page:
             return self._site.getSiteTitle() + " > " + self.getShortTitle()
         else:
             return self.getParent().getTitle() + " > " + self.getShortTitle()
+
+    def createMenu(self, cur_page, last=False):
+        items = sorted(self._subpages, key=lambda i: i.getShortTitle())
+
+        # Add root link
+        if self.isRoot():
+            items.insert(0, self)
+
+        # Create HTML Code
+        found = False
+        tmp = "<ul>\n"
+        for p in items:
+            if p == cur_page:
+                found = True
+
+            if p.isHidden():
+                continue
+
+            active = ""
+            if p.pageIsInPathTo(cur_page) and (not p.isRoot() or p == cur_page):
+                active = "class=\"active\""
+
+            tmp = ''.join([tmp, "<li><a href=\"", p.getLink(cur_page), "\" ",
+                          active, ">", p.getShortTitle(), "</a></li>\n"])
+
+            # Create submenu
+            if not p.isRoot() and p.pageIsInPathTo(cur_page) and not last:
+                tmp += p.createMenu(cur_page, found)
+
+        tmp += "</ul>\n"
+
+        return tmp
+
+    def pageIsInPathTo(self, dest):
+        parent = dest
+        while parent:
+            if parent == self:
+                return True
+            parent = parent.getParent()
+
+        return False
 
 
 class OtherFile:
