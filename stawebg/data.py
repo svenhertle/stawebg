@@ -28,7 +28,6 @@ class Project:
 
     def copy(self):
         for s in self._sites:
-            s._root.debugTree()
             s.copy()
 
     def getLayoutByName(self, name=None):
@@ -160,7 +159,7 @@ class Site:
         isCont = lambda f: os.path.splitext(f)[1] in config['files']['content']
 
         # First we have to find the index file in this directory...
-        idx=None
+        idx = None
         for f in files:
             absf = os.path.join(dir_path, f)
             if isFile(absf) and isCont(absf) and isIndex(absf):
@@ -204,7 +203,8 @@ class Site:
                 if not (f.startswith("_") or
                         stringEndsWith(absf, config["files"]["exclude"])):
                     tmp = OtherFile(self.getAbsSrcPath(),
-                                    os.path.relpath(absf, self.getAbsSrcPath()),
+                                    os.path.relpath(
+                                        absf, self.getAbsSrcPath()),
                                     self.getAbsDestPath())
                     self._other_files.append(tmp)
 
@@ -213,62 +213,10 @@ class Site:
     def createMenu(self, cur_page):
         return self._root.createMenu(cur_page)
 
-    #def _createMenuHelper(self, level, cur_page, last):
-    #    items = []
-    #    home = None  # Add home later to begin of list of items
-
-    #    # Collect items
-    #    for p in self._pages:
-    #        if level == 1 and len(p.getPath()) <= 1:
-    #            # Home / in list -> don't add now
-    #            # add it later to the begin of the sorted list of items
-    #            if len(p.getPath()) == 0:
-    #                home = p
-    #                continue
-    #            items.append(p)
-    #        # Until cur_page
-    #        elif (listBeginsWith(cur_page.getPath(), p.getPath()[:-1]) and
-    #              len(p.getPath()) == level):
-    #            items.append(p)
-    #        # After cur_page
-    #        elif (listBeginsWith(p.getPath(), cur_page.getPath()) and
-    #              len(p.getPath()) == level):
-    #            items.append(p)
-
-    #    # Sort items
-    #    items = sorted(set(items), key=lambda i: i.getShortTitle())
-    #    if home:
-    #        items.insert(0, home)
-
-    #    # Create HTML Code
-    #    found = False
-    #    tmp = "<ul>\n"
-    #    for p in items:
-    #        if p == cur_page:
-    #            found = True
-
-    #        if p.isHidden():
-    #            continue
-
-    #        active = ""
-    #        if p == cur_page or listBeginsWith(cur_page.getPath(), p.getPath()):
-    #            active = "class=\"active\""
-
-    #        tmp = ''.join([tmp, "<li><a href=\" ", p.getLink(cur_page), "\" ",
-    #                      active, ">", p.getShortTitle(), "</a></li>\n"])
-
-    #        # Create submenu
-    #        if listBeginsWith(cur_page.getPath(), p.getPath()) and not last:
-    #            tmp += self._createMenuHelper(level+1, cur_page, found)
-
-    #    tmp += "</ul>\n"
-
-    #    return tmp
-
 
 class Page:
     def __init__(self, name, absPath, site, parent, hidden, is_index):
-        self._name = name # None -> root
+        self._name = name  # None -> root
         self._absSrc = absPath
         self._site = site
         self._hidden = hidden
@@ -277,12 +225,6 @@ class Page:
 
         # was index.html in original file structure (important for %CUR%)
         self._is_index = is_index
-
-    def debugTree(self, level=0):
-        print("  "*level + self._name)
-
-        for p in self._subpages:
-            p.debugTree(level+1)
 
     def appendPage(self, p):
         self._subpages.append(p)
@@ -297,7 +239,7 @@ class Page:
         return self._name
 
     def isRoot(self):
-        return self._parent == None
+        return self._parent is None
 
     def isHidden(self):
         return self._hidden
@@ -305,8 +247,6 @@ class Page:
     def copy(self):
         # Create directory
         mkdir(os.path.dirname(self._getDestFile()))
-
-        print(str(self._absSrc) + " -> " + self._getDestFile());
 
         # Write to file
         outf = open(self._getDestFile(), 'w')
@@ -378,13 +318,14 @@ class Page:
 
         parent = self.getParent()
         while parent and not parent.isRoot():
-            tmp_path = os.path.join(parent.getName(), tmp_path);
+            tmp_path = os.path.join(parent.getName(), tmp_path)
             parent = parent.getParent()
 
         if not self.isRoot():
             tmp_path = os.path.join(tmp_path, self._name)
 
-        return os.path.join(self._site.getAbsDestPath(), tmp_path, "index.html")
+        return os.path.join(self._site.getAbsDestPath(), tmp_path,
+                            "index.html")
 
     def getRootLink(self):
         tmp = ""
@@ -426,7 +367,6 @@ class Page:
             return cleverCapitalize(self.getName())
 
     def getTitle(self):
-        result = ""
         if not self.getParent():
             return self._site.getSiteTitle() + " > " + self.getShortTitle()
         else:
