@@ -28,6 +28,7 @@ class Project:
 
     def copy(self):
         for s in self._sites:
+            s._root.debugTree()
             s.copy()
 
     def getLayoutByName(self, name=None):
@@ -158,23 +159,26 @@ class Site:
         isIndex = lambda f: os.path.basename(f) in config['files']['index']
         isCont = lambda f: os.path.splitext(f)[1] in config['files']['content']
 
-        # First we have to find the index file in this directory
+        # First we have to find the index file in this directory...
+        idx=None
         for f in files:
             absf = os.path.join(dir_path, f)
             if isFile(absf) and isCont(absf) and isIndex(absf):
-                idx = Page(os.path.splitext(f)[0], absf,
+                idx = Page(os.path.split(dir_path)[1], absf,
                            self, parent, False, True)
-                if parent:
-                    parent.appendPage(idx)
-                else:
-                    self._root = idx
                 files.remove(f)
                 break
-        #CONTINUE HERE
-        # idx muss auf etwas gültiges gesetzt werden. wenn keine index
-        # gefunden wurde, muss auf jeden Fall eine leere Seite
-        # stattdessen erstellt werden. --Markus
-        #if not idx:
+        # ...or create an empty page as index...
+        # TODO: test
+        if not idx:
+                idx = Page(os.path.split(dir_path)[1], None,
+                           self, parent, False, True)
+
+        # ...and add to list
+        if parent:
+            parent.appendPage(idx)
+        else:
+            self._root = idx
 
         # Make absolute pathes and check if it's a page
         for f in files:
@@ -182,7 +186,7 @@ class Site:
 
             # HTML or Markdown File -> Page
             if isFile(absf) and isCont(absf):
-                # Hidden files begin with _ # LOOK: hidden
+                # Hidden files begin with _
                 hidden = f.startswith("_") and len(f) > 1
                 if hidden:
                     f = f[1:]
@@ -274,6 +278,12 @@ class Page:
         # was index.html in original file structure (important for %CUR%)
         self._is_index = is_index
 
+    def debugTree(self, level=0):
+        print("  "*level + self._name)
+
+        for p in self._subpages:
+            p.debugTree(level+1)
+
     def appendPage(self, p):
         self._subpages.append(p)
 
@@ -286,6 +296,9 @@ class Page:
     def getName(self):
         return self._name
 
+    def isRoot(self):
+        return self._parent == None
+
     def isHidden(self):
         return self._hidden
 
@@ -293,13 +306,14 @@ class Page:
         # Create directory
         mkdir(os.path.dirname(self._getDestFile()))
 
-        print(self._absSrc + " -> " + self._getDestFile());
+        print(str(self._absSrc) + " -> " + self._getDestFile());
 
         # Write to file
         outf = open(self._getDestFile(), 'w')
 
         self._appendAndReplaceFile(outf, self._site.getLayoutHead())
-        self._appendAndReplaceFile(outf, self._absSrc, True)
+        if self._absSrc:
+            self._appendAndReplaceFile(outf, self._absSrc, True)
         self._appendAndReplaceFile(outf, self._site.getLayoutBottom())
 
         outf.close()
@@ -314,7 +328,7 @@ class Page:
 
             # Markdown
             if translate:
-                content = self._translateMarkup(self._absSrc, content)
+                content = self._translateMarkup(src, content)
 
             new = self._replaceKeywords(content)
             to.write(new)
@@ -361,11 +375,14 @@ class Page:
 
     def _getDestFile(self):
         tmp_path = ""
-        parent = self.getParent()
 
-        if parent:
+        parent = self.getParent()
+        while parent and not parent.isRoot():
             tmp_path = os.path.join(parent.getName(), tmp_path);
             parent = parent.getParent()
+
+        if not self.isRoot():
+            tmp_path = os.path.join(tmp_path, self._name)
 
         return os.path.join(self._site.getAbsDestPath(), tmp_path, "index.html")
 
@@ -374,7 +391,7 @@ class Page:
 
         parent = self.getParent()
 
-        if parent:
+        while parent:
             tmp = tmp + "../"
             parent = parent.getParent()
 
@@ -393,7 +410,7 @@ class Page:
         tmp = origin.getRootLink()
 
         parent = self.getParent()
-        if parent:
+        while parent:
             tmp = t + "/" + tmp
             parent = parent.getParent()
 

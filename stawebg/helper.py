@@ -57,7 +57,6 @@ def mkdir(path):
         if e.errno != errno.EEXIST:
             raise
 
-
 def isMarkdown(path):
     return os.path.splitext(path)[1] == ".md"
 
@@ -112,5 +111,5 @@ def stringEndsWith(string, extensions):
 
 
 def fail(text):
-    sys.stderr.write(text)
+    sys.stderr.write(text + "\n")
     sys.exit(1)
