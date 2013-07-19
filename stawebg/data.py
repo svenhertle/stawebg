@@ -153,43 +153,51 @@ class Site:
 
     def _readHelper(self, dir_path, parent):
         files = os.listdir(dir_path)
+        isFile = lambda f: os.path.isfile(f)
+        isDir = lambda f: os.path.isdir(f)
+        isIndex = lambda f: os.path.basename(f) in config['files']['index']
+        isCont = lambda f: os.path.splitext(f)[1] in config['files']['content']
 
-        if not parent:
-            parent = self._root
+        # First we have to find the index file in this directory
+        for f in files:
+            absf = os.path.join(dir_path, f)
+            if isFile(absf) and isCont(absf) and isIndex(absf):
+                idx = Page(os.path.splitext(f)[0], absf,
+                           self, parent, False, True)
+                if parent:
+                    parent.appendPage(idx)
+                else:
+                    self._root = idx
+                files.remove(f)
+                break
+        #CONTINUE HERE
+        # idx muss auf etwas gültiges gesetzt werden. wenn keine index
+        # gefunden wurde, muss auf jeden Fall eine leere Seite
+        # stattdessen erstellt werden. --Markus
+        #if not idx:
 
         # Make absolute pathes and check if it's a page
         for f in files:
             absf = os.path.join(dir_path, f)
-            name = os.path.basename(absf)
-            ext = os.path.splitext(absf)[1]
 
             # HTML or Markdown File -> Page
-            if os.path.isfile(absf) and ext in config["files"]["content"]:
+            if isFile(absf) and isCont(absf):
                 # Hidden files begin with _ # LOOK: hidden
-                hidden = False
-                if name.startswith("_") and len(name) > 1:
-                    hidden = True
-                    name = name[1:]
-
-                # Is index file
-                is_index = name in config['files']["index"]
-
-                # Delete file extension
-                name = os.path.splitext(name)[0]
+                hidden = f.startswith("_") and len(f) > 1
+                if hidden:
+                    f = f[1:]
 
                 print("\tFound page: " + absf)
 
-                newpage = Page(name, absf, self, parent, hidden, is_index)
-                if parent:
-                    parent.appendPage(newpage)
-                else:
-                    self._root = newpage
+                newpage = Page(os.path.splitext(f)[0], absf,
+                               self, idx, hidden, False)
+                idx.appendPage(newpage)
             # Directory -> Go inside
-            elif os.path.isdir(absf):
-                self._readHelper(absf, parent)
+            elif isDir(absf):
+                self._readHelper(absf, idx)
             # Unknown object
             else:
-                if not (name.startswith("_") or
+                if not (f.startswith("_") or
                         stringEndsWith(absf, config["files"]["exclude"])):
                     tmp = OtherFile(self.getAbsSrcPath(),
                                     os.path.relpath(absf, self.getAbsSrcPath()),
