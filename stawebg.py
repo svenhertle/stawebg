@@ -1,18 +1,16 @@
 #!/usr/bin/python3
 
 import argparse
+import os
 from stawebg.data import *
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="static website generator")
-    parser.add_argument("directory", type=str, nargs="?",
-                               help='the directory with the project data')
+    parser.add_argument("directory", nargs="?", default=os.getcwd(),
+                        help='the web project root directory')
+
     args = parser.parse_args()
 
-    project_dir=""
-    if args.directory:
-        project_dir = args.directory
-
-    project = Project(project_dir)
+    project = Project(args.directory)
     project.read()
     project.copy()
