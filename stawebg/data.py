@@ -154,7 +154,7 @@ class Site:
             self._layout_name = j.get("layout")
 
     def _readHelper(self, dir_path, parent):
-        files = os.listdir(dir_path)
+        entries = os.listdir(dir_path)
         isFile = lambda f: os.path.isfile(f)
         isDir = lambda f: os.path.isdir(f)
         isIndex = lambda f: os.path.basename(f) in config['files']['index']
@@ -162,12 +162,12 @@ class Site:
 
         # First we have to find the index file in this directory...
         idx = None
-        for f in files:
+        for f in entries:
             absf = os.path.join(dir_path, f)
             if isFile(absf) and isCont(absf) and isIndex(absf):
                 idx = Page(os.path.split(dir_path)[1], absf,
                            self, parent, False, True)
-                files.remove(f)
+                entries.remove(f)
                 break
         # ...or create an empty page as index...
         # TODO: test
@@ -182,7 +182,7 @@ class Site:
             self._root = idx
 
         # Make absolute pathes and check if it's a page
-        for f in files:
+        for f in entries:
             absf = os.path.join(dir_path, f)
 
             # HTML or Markdown File -> Page
