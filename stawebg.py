@@ -2,7 +2,7 @@
 
 import argparse
 import os
-from stawebg.data import *
+from stawebg.data import Project
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="static website generator")
