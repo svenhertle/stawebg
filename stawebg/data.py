@@ -218,7 +218,7 @@ class Site:
 
 class Page:
     def __init__(self, name, absPath, site, parent, hidden):
-        self._name = name  # None -> root
+        self._name = name
         self._absSrc = absPath
         self._site = site
         self._hidden = hidden
@@ -383,9 +383,7 @@ class Page:
             if not p.isRoot() and p.pageIsInPathTo(cur_page) and not last:
                 tmp += p.createMenu(cur_page, found)
 
-        tmp += "</ul>\n"
-
-        return tmp
+        return tmp + "</ul>\n"
 
     def pageIsInPathTo(self, dest):
         parent = dest
