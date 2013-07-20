@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
-from stawebg.helper import *
 import json
 import subprocess
+from stawebg.helper import *
 
 config = {}
 
