@@ -172,7 +172,6 @@ class Site:
                 entries.remove(f)
                 break
         # …or create an empty page as index
-        # TODO: fix! I tested it and it is broken. :(
         if not idx:
                 idx = Page(os.path.split(dir_path)[1], None,
                            self, parent, False)
@@ -324,7 +323,7 @@ class Page:
         return tmp
 
     def getCurrentLink(self):
-        return '' if isIndex(self._absSrc) else '../'
+        return '' if self._absSrc != None and isIndex(self._absSrc) else '../'
 
     def getLink(self, origin=None):
         tmp = ""
