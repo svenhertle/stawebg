@@ -8,6 +8,10 @@ from stawebg.helper import (listFolders, findFiles, copyFile, mkdir,
 
 config = {}
 
+isFile = lambda f: os.path.isfile(f)
+isIndex = lambda f: os.path.basename(f) in config['files']['index']
+isCont = lambda f: os.path.splitext(f)[1] in config['files']['content']
+
 
 class Project:
     def __init__(self, project_dir=""):
@@ -157,10 +161,6 @@ class Site:
 
     def _readHelper(self, dir_path, parent):
         entries = os.listdir(dir_path)
-        isFile = lambda f: os.path.isfile(f)
-        isDir = lambda f: os.path.isdir(f)
-        isIndex = lambda f: os.path.basename(f) in config['files']['index']
-        isCont = lambda f: os.path.splitext(f)[1] in config['files']['content']
 
         # First we have to find the index file in this directory...
         idx = None
@@ -168,14 +168,14 @@ class Site:
             absf = os.path.join(dir_path, f)
             if isFile(absf) and isCont(absf) and isIndex(absf):
                 idx = Page(os.path.split(dir_path)[1], absf,
-                           self, parent, False, True)
+                           self, parent, False)
                 entries.remove(f)
                 break
         # ...or create an empty page as index...
         # TODO: test
         if not idx:
                 idx = Page(os.path.split(dir_path)[1], None,
-                           self, parent, False, True)
+                           self, parent, False)
 
         # ...and add to list
         if parent:
@@ -197,10 +197,10 @@ class Site:
                 print("\tFound page: " + absf)
 
                 newpage = Page(os.path.splitext(f)[0], absf,
-                               self, idx, hidden, False)
+                               self, idx, hidden)
                 idx.appendPage(newpage)
             # Directory -> Go inside
-            elif isDir(absf):
+            elif os.path.isdir(absf):
                 self._readHelper(absf, idx)
             # Unknown object
             else:
@@ -219,16 +219,13 @@ class Site:
 
 
 class Page:
-    def __init__(self, name, absPath, site, parent, hidden, is_index):
+    def __init__(self, name, absPath, site, parent, hidden):
         self._name = name  # None -> root
         self._absSrc = absPath
         self._site = site
         self._hidden = hidden
         self._parent = parent
         self._subpages = []
-
-        # was index.html in original file structure (important for %CUR%)
-        self._is_index = is_index
 
     def appendPage(self, p):
         self._subpages.append(p)
@@ -342,10 +339,7 @@ class Page:
         return tmp
 
     def getCurrentLink(self):
-        if self._is_index:
-            return ""
-        else:
-            return "../"
+        return '' if isIndex(self._absSrc) else '../'
 
     def getLink(self, origin=None):
         tmp = ""
