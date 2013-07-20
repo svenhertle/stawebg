@@ -24,7 +24,7 @@ class Project:
             conff = open(os.path.join(self._root_dir, "config.json"), "r")
             config = json.load(conff)
         except Exception as e:
-            fail("Error parsing JSON file: " + str(e))
+            fail("Error parsing configuration file: " + str(e))
 
         # Make directories absolute
         for k in config["dirs"]:
