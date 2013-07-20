@@ -3,8 +3,8 @@
 import json
 import os
 import subprocess
-from stawebg.helper import (listFolders, findFiles, copyFile, mkdir,
-                            stringEndsWith, fail, cleverCapitalize)
+from stawebg.helper import (listFolders, findFiles, copyFile, mkdir, fail,
+                            cleverCapitalize)
 
 config = {}
 
@@ -162,7 +162,7 @@ class Site:
     def _readHelper(self, dir_path, parent):
         entries = os.listdir(dir_path)
 
-        # First we have to find the index file in this directory...
+        # First we have to find the index file in this directory…
         idx = None
         for f in entries:
             absf = os.path.join(dir_path, f)
@@ -171,19 +171,18 @@ class Site:
                            self, parent, False)
                 entries.remove(f)
                 break
-        # ...or create an empty page as index...
+        # …or create an empty page as index
         # TODO: test
         if not idx:
                 idx = Page(os.path.split(dir_path)[1], None,
                            self, parent, False)
 
-        # ...and add to list
         if parent:
             parent.appendPage(idx)
         else:
             self._root = idx
 
-        # Make absolute pathes and check if it's a page
+        # Make absolute paths and check if it's a page
         for f in entries:
             absf = os.path.join(dir_path, f)
 
@@ -196,16 +195,15 @@ class Site:
 
                 print("\tFound page: " + absf)
 
-                newpage = Page(os.path.splitext(f)[0], absf,
-                               self, idx, hidden)
-                idx.appendPage(newpage)
+                idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
+                                    hidden))
             # Directory -> Go inside
             elif os.path.isdir(absf):
                 self._readHelper(absf, idx)
             # Unknown object
             else:
                 if not (f.startswith("_") or
-                        stringEndsWith(absf, config["files"]["exclude"])):
+                        absf.endswith(tuple(config["files"]["exclude"]))):
                     tmp = OtherFile(self.getAbsSrcPath(),
                                     os.path.relpath(
                                         absf, self.getAbsSrcPath()),

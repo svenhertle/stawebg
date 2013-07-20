@@ -38,7 +38,7 @@ def findFiles(path, exclude_ext=[]):
         if os.path.isdir(absf):
             result.extend(findFiles(absf))
         else:
-            if not stringEndsWith(absf, exclude_ext):
+            if not absf.endswith(tuple(exclude_ext)):
                 result.append(absf)
 
     return result
@@ -71,13 +71,6 @@ def cleverCapitalize(text):
     else:
         return text[0].upper() + text[1:]
 
-
-def stringEndsWith(string, extensions):
-    for e in extensions:
-        if string.endswith(e):
-            return True
-
-    return False
 
 #
 # Debug and errors
