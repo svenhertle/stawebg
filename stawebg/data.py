@@ -291,25 +291,12 @@ class Page:
 
     def _replaceKeywords(self, text):
         new = text
-
-        # %ROOT%
         new = new.replace("%ROOT%", self.getRootLink())
-
-        # %CUR%
         new = new.replace("%CUR%", self.getCurrentLink())
-
-        # %TITLE%
         new = new.replace("%TITLE%", self.getTitle())
-
-        # %SITETITLE%
         new = new.replace("%SITETITLE%", self._site.getSiteTitle())
-
-        # %SITESUBTITLE%
         new = new.replace("%SITESUBTITLE%", self._site.getSiteSubtitle())
-
-        # %MENU%
         new = new.replace("%MENU%", self._site.createMenu(self))
-
         return new
 
     def _getDestFile(self):
