@@ -323,7 +323,7 @@ class Page:
         return tmp
 
     def getCurrentLink(self):
-        return '' if self._absSrc != None and isIndex(self._absSrc) else '../'
+        return '' if self._absSrc and isIndex(self._absSrc) else '../'
 
     def getLink(self, origin=None):
         tmp = ""
