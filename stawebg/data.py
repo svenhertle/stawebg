@@ -374,9 +374,9 @@ class Page:
 
             active = ""
             if p.pageIsInPathTo(cur_page) and (not p.isRoot() or p == cur_page):
-                active = "class=\"active\""
+                active = " class=\"active\""
 
-            tmp = ''.join([tmp, "<li><a href=\"", p.getLink(cur_page), "\" ",
+            tmp = ''.join([tmp, "<li><a href=\"", p.getLink(cur_page), "\"",
                           active, ">", p.getShortTitle(), "</a></li>\n"])
 
             # Create submenu
