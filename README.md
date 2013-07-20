@@ -3,12 +3,11 @@ stawebg
 
 stawebg is a static website generator written in Python.
 
-The software isn't ready for daily use yet.
-
 Author
 ------
 
 Sven Hertle (<sven.hertle@googlemail.com>)
+Markus Teich (<teichm@in.tum.de>)
 
 Dependencies
 ------------
