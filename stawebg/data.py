@@ -172,7 +172,7 @@ class Site:
                 entries.remove(f)
                 break
         # …or create an empty page as index
-        # TODO: test
+        # TODO: fix! I tested it and it is broken. :(
         if not idx:
                 idx = Page(os.path.split(dir_path)[1], None,
                            self, parent, False)
