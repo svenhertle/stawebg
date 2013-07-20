@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 
 import json
+import os
 import subprocess
-from stawebg.helper import *
+from stawebg.helper import (listFolders, findFiles, copyFile, mkdir,
+                            stringEndsWith, fail, cleverCapitalize)
 
 config = {}
 

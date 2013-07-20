@@ -57,32 +57,6 @@ def mkdir(path):
         if e.errno != errno.EEXIST:
             raise
 
-def isMarkdown(path):
-    return os.path.splitext(path)[1] == ".md"
-
-
-def listToPath(lst, prefix=""):
-    tmp = prefix
-
-    for l in lst:
-        tmp = os.path.join(tmp, l)
-
-    return tmp
-
-#
-# Lists
-#
-
-
-def listBeginsWith(lst, begin):
-    if not begin or not lst:
-        return False
-
-    for i, k in zip(lst, begin):
-        if i != k:
-            return False
-
-    return len(begin) <= len(lst)
 
 #
 # Strings
