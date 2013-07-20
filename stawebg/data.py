@@ -14,14 +14,11 @@ class Project:
         self._layouts = {}
         self._project_dir = project_dir
 
-        if not os.path.isfile(os.path.join(self._project_dir, "config.json")):
-            fail("Can't find config.json")
-
-        with open(os.path.join(self._project_dir, "config.json"), "r") as conff:
-            try:
-                config = json.load(conff)
-            except Exception as e:
-                fail("Error parsing JSON file: " + str(e))
+        try:
+            conff = open(os.path.join(self._project_dir, "config.json"), "r")
+            config = json.load(conff)
+        except Exception as e:
+            fail("Error parsing JSON file: " + str(e))
 
         # Make directories absolute
         for k in config["dirs"]:
