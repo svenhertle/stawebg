@@ -18,17 +18,17 @@ class Project:
         global config
         self._sites = []
         self._layouts = {}
-        self._project_dir = project_dir
+        self._root_dir = project_dir
 
         try:
-            conff = open(os.path.join(self._project_dir, "config.json"), "r")
+            conff = open(os.path.join(self._root_dir, "config.json"), "r")
             config = json.load(conff)
         except Exception as e:
             fail("Error parsing JSON file: " + str(e))
 
         # Make directories absolute
         for k in config["dirs"]:
-            config["dirs"][k] = os.path.join(self._project_dir, config["dirs"][k])
+            config["dirs"][k] = os.path.join(self._root_dir, config["dirs"][k])
 
     def read(self):
         self._readLayouts()
