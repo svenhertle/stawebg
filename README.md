@@ -1,22 +1,23 @@
-stawebg
-=======
+# stawebg
 
-stawebg is a static website generator written in Python.
+stawebg is a static website generator written in Python. It supports templates and automatic menu generation.
 
-Author
-------
+## Authors
 
 Sven Hertle (<sven.hertle@googlemail.com>)  
 Markus Teich (<teichm@in.tum.de>)
 
-Dependencies
-------------
+## Dependencies
 
-You need a [markdown parser](http://daringfireball.net/projects/markdown/).
-With default configuration the markdown binary must be found in $PATH.
+* Python 3
+* If you want to use markdown like in the example site, you need a markdown to html converter
 
-License
--------
+## Usage
+
+To create your own site, take a look at the `data` directory and modify it to your needs.
+To generate the static html version run `stawebg.py` in the data directory.
+
+## License
 
 Copyright (c) 2013 Sven Hertle (<sven.hertle@googlemail.com>)
 
