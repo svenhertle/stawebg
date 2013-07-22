@@ -256,6 +256,10 @@ class Page:
 
     def _translateMarkup(self):
         text = ''
+
+        if not self._absSrc:
+            return text
+
         tool = config["files"]["markup"].get(os.path.splitext(self._absSrc)[1])
 
         with open(self._absSrc) as src:
