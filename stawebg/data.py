@@ -2,7 +2,8 @@
 
 import json
 import os
-import subprocess
+import re
+from subprocess import Popen, PIPE
 from stawebg.helper import (listFolders, findFiles, copyFile, mkdir, fail,
                             cleverCapitalize)
 
@@ -11,6 +12,7 @@ config = {}
 isFile = lambda f: os.path.isfile(f)
 isIndex = lambda f: os.path.basename(f) in config['files']['index']
 isCont = lambda f: os.path.splitext(f)[1] in config['files']['content']
+isMarkup = lambda f: os.path.splitext(f)[1] in config['files']['markup']
 
 
 class Project:
@@ -62,8 +64,7 @@ class Layout:
     def __init__(self, name):
         self._name = name
         self._dir = os.path.join(config['dirs']['layouts'], name)
-        self._head = os.path.join(self._dir, config['layout']["head"])
-        self._bottom = os.path.join(self._dir, config['layout']["bottom"])
+        self._template = os.path.join(self._dir, 'template.html')
         self._other_files = []
 
         print("Found layout: " + self._name)
@@ -78,11 +79,8 @@ class Layout:
         for f in self._other_files:
             f.copy(dest)
 
-    def getHead(self):
-        return self._head
-
-    def getBottom(self):
-        return self._bottom
+    def getTemplate(self):
+        return self._template
 
 
 class Site:
@@ -105,11 +103,8 @@ class Site:
     def getLayout(self):
         return self._project.getLayoutByName(self._layout_name)
 
-    def getLayoutHead(self):
-        return self.getLayout().getHead()
-
-    def getLayoutBottom(self):
-        return self.getLayout().getBottom()
+    def getLayoutTemplate(self):
+        return self.getLayout().getTemplate()
 
     def getSiteTitle(self):
         if self._sitetitle:
@@ -149,7 +144,7 @@ class Site:
             fail("Can't find config file: " + filename)
 
         j = {}
-        with open(filename, 'r') as f:
+        with open(filename) as f:
             try:
                 j = json.load(f)
             except Exception as e:
@@ -243,60 +238,48 @@ class Page:
         return self._hidden
 
     def copy(self):
-        # Create directory
         mkdir(os.path.dirname(self._getDestFile()))
 
-        # Write to file
-        outf = open(self._getDestFile(), 'w')
-
-        self._appendAndReplaceFile(outf, self._site.getLayoutHead())
-        if self._absSrc:
-            self._appendAndReplaceFile(outf, self._absSrc, True)
-        self._appendAndReplaceFile(outf, self._site.getLayoutBottom())
-
-        outf.close()
+        # Use 'codecs' package to support UTF-8?
+        try:
+            outf = open(self._getDestFile(), 'w')
+            tplf = open(self._site.getLayoutTemplate())
+            outf.write(self._replaceKeywords(tplf.read()))
+            tplf.close()
+            outf.close()
+        except Exception as e:
+            fail("Error creating " + self._getDestFile() + ": " + str(e))
 
         # Copy subpages
         for p in self._subpages:
             p.copy()
 
-    def _appendAndReplaceFile(self, to, src, translate=False):
-        with open(src, 'r') as f:
-            content = "".join(f.readlines())
+    def _translateMarkup(self):
+        text = ''
+        tool = config["files"]["markup"].get(os.path.splitext(self._absSrc)[1])
 
-            # Markdown
-            if translate:
-                content = self._translateMarkup(src, content)
+        with open(self._absSrc) as src:
+            text = src.read()
 
-            new = self._replaceKeywords(content)
-            to.write(new)
-
-    def _translateMarkup(self, filename, text):
-        extension = os.path.splitext(filename)[1]
-
-        if extension in config["files"]["markup"]:
-            p = subprocess.Popen(config["files"]["markup"][extension],
-                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
-                                 universal_newlines=True)
-            out, err = p.communicate(text.encode())
-
-            if err != "":
-                fail(config["files"]["markup"][extension] + ": " + err)
-
+        if tool:
+            out, err = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                             universal_newlines=True).communicate(text.encode())
+            if err != '':
+                fail(' '.join(tool) + ": " + err)
             return out
-
         return text
 
     def _replaceKeywords(self, text):
-        new = text
-        new = new.replace("%ROOT%", self.getRootLink())
-        new = new.replace("%CUR%", self.getCurrentLink())
-        new = new.replace("%TITLE%", self.getTitle())
-        new = new.replace("%SITETITLE%", self._site.getSiteTitle())
-        new = new.replace("%SITESUBTITLE%", self._site.getSiteSubtitle())
-        new = new.replace("%MENU%", self._site.createMenu(self))
-        return new
+        reps = {"<!---ROOT-->": self.getRootLink(),
+                "<!---CUR-->": self.getCurrentLink(),
+                "<!---TITLE-->": self.getTitle(),
+                "<!---SITETITLE-->": self._site.getSiteTitle(),
+                "<!---SITESUBTITLE-->": self._site.getSiteSubtitle(),
+                "<!---MENU-->": self._site.createMenu(self),
+                "<!---CONTENT-->": self._translateMarkup()}
+        trans = lambda m: reps[m.group(0)]
+        rc = re.compile('|'.join(map(re.escape, reps)))
+        return rc.sub(trans, text)
 
     def _getDestFile(self):
         tmp_path = ""

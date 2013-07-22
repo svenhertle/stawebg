@@ -4,10 +4,6 @@
         "layouts":  "layouts",
         "out":      "out"
     },
-    "layout": {
-        "head":     "head.html",
-        "bottom":   "bottom.html"
-    },
     "config": {
         "site":     "_config.json"
     },
@@ -15,7 +11,7 @@
         "index":    ["index.html", "index.md"],
         "content":  [".html", ".md"],
         "markup": {
-            ".md": "markdown"
+            ".md": ["markdown"]
         },
         "exclude":  []
     }
