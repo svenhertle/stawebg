@@ -138,7 +138,7 @@ class Site:
             f.copy()
 
     def _readConfig(self):
-        filename = os.path.join(self.getAbsSrcPath(), config['config']["site"])
+        filename = os.path.join(config["dirs"]["sites"], self._name + ".json")
 
         if not os.path.isfile(filename):
             fail("Can't find config file: " + filename)

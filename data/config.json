@@ -4,9 +4,6 @@
         "layouts":  "layouts",
         "out":      "out"
     },
-    "config": {
-        "site":     "_config.json"
-    },
     "files": {
         "index":    ["index.html", "index.md"],
         "content":  [".html", ".md"],
