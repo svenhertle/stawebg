@@ -274,13 +274,13 @@ class Page:
         return text
 
     def _replaceKeywords(self, text):
-        reps = {"<!---ROOT-->": self.getRootLink(),
-                "<!---CUR-->": self.getCurrentLink(),
-                "<!---TITLE-->": self.getTitle(),
-                "<!---SITETITLE-->": self._site.getSiteTitle(),
-                "<!---SITESUBTITLE-->": self._site.getSiteSubtitle(),
-                "<!---MENU-->": self._site.createMenu(self),
-                "<!---CONTENT-->": self._translateMarkup()}
+        reps = {"<!---ROOT--->": self.getRootLink(),
+                "<!---CUR--->": self.getCurrentLink(),
+                "<!---TITLE--->": self.getTitle(),
+                "<!---SITETITLE--->": self._site.getSiteTitle(),
+                "<!---SITESUBTITLE--->": self._site.getSiteSubtitle(),
+                "<!---MENU--->": self._site.createMenu(self),
+                "<!---CONTENT--->": self._translateMarkup()}
         trans = lambda m: reps[m.group(0)]
         rc = re.compile('|'.join(map(re.escape, reps)))
         return rc.sub(trans, text)
