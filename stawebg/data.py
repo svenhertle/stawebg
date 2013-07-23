@@ -141,7 +141,7 @@ class Site:
             f.copy()
 
     def _readConfig(self):
-        filename = os.path.join(self.getAbsSrcPath(), config['config']["site"])
+        filename = os.path.join(config["dirs"]["sites"], self._name + ".json")
 
         if not os.path.isfile(filename):
             fail("Can't find config file: " + filename)
@@ -151,14 +151,14 @@ class Site:
             try:
                 j = json.load(f)
             except Exception as e:
-                fail("Error parsing JSON file: " + str(e))
+                fail("Error parsing JSON file (" + filename + "): " + str(e))
 
             self._sitetitle = j.get("title")
             self._sitesubtitle = j.get("subtitle")
             self._layout_name = j.get("layout")
 
     def _readHelper(self, dir_path, parent):
-        entries = os.listdir(dir_path)
+        entries = sorted(os.listdir(dir_path))
 
         # First we have to find the index file in this directory…
         idx = None
@@ -179,28 +179,50 @@ class Site:
         else:
             self._root = idx
 
+        # Sort entries as specified in configuration
+        sorted_entries = []
+        hidden_entries = []
+        if "stawebg.json" in entries:
+            absf = os.path.join(dir_path, "stawebg.json")
+
+            j = {}
+            with open(absf) as f:
+                try:
+                    j = json.load(f)
+                except Exception as e:
+                    fail("Error parsing JSON file (" + absf + "): " + str(e))
+
+                sorted_entries = j.get("sort")
+                hidden_entries = j.get("hidden")
+
+        sorted_entries.reverse()
+        for s in sorted_entries:
+            absf = os.path.join(dir_path, s)
+
+            if not s in entries:
+                print("\tFile not found (specified in sort): " + absf)
+            else:
+                entries.remove(s)
+                entries.insert(0, s)
+
         # Make absolute paths and check if it's a page
         for f in entries:
             absf = os.path.join(dir_path, f)
 
             # HTML or Markdown File -> Page
             if isFile(absf) and isCont(absf):
-                # Hidden files begin with _
-                hidden = f.startswith("_") and len(f) > 1
-                if hidden:
-                    f = f[1:]
-
                 print("\tFound page: " + absf)
 
+                hidden = f in hidden_entries
+
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
-                                    hidden))
+                                hidden))
             # Directory -> Go inside
             elif os.path.isdir(absf):
                 self._readHelper(absf, idx)
             # Unknown object
             else:
-                if not (f.startswith("_") or
-                        absf.endswith(tuple(config["files"]["exclude"]))):
+                if not absf.endswith(tuple(config["files"]["exclude"])):
                     tmp = OtherFile(self.getAbsSrcPath(),
                                     os.path.relpath(
                                         absf, self.getAbsSrcPath()),
@@ -344,7 +366,7 @@ class Page:
             return self.getParent().getTitle() + " > " + self.getShortTitle()
 
     def createMenu(self, cur_page, last=False):
-        items = sorted(self._subpages, key=lambda i: i.getShortTitle())
+        items = self._subpages[:]
 
         # Add root link
         if self.isRoot():
