@@ -1,6 +1,8 @@
 stawebg
 =======
 
+<p style="color:red; font-weight:bold;">This documentation may be obsolete!</p>
+
 stawebg is a static website generator written in Python 3.
 
 Features
