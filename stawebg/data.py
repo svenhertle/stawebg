@@ -157,29 +157,10 @@ class Site:
             self._sitesubtitle = j.get("subtitle")
             self._layout_name = j.get("layout")
 
-    def _readHelper(self, dir_path, parent):
+    def _readHelper(self, dir_path, parent, dir_hidden=False):
         entries = sorted(os.listdir(dir_path))
 
-        # First we have to find the index file in this directory…
-        idx = None
-        for f in entries:
-            absf = os.path.join(dir_path, f)
-            if isFile(absf) and isCont(absf) and isIndex(absf):
-                idx = Page(os.path.split(dir_path)[1], absf,
-                           self, parent, False)
-                entries.remove(f)
-                break
-        # …or create an empty page as index
-        if not idx:
-                idx = Page(os.path.split(dir_path)[1], None,
-                           self, parent, False)
-
-        if parent:
-            parent.appendPage(idx)
-        else:
-            self._root = idx
-
-        # Sort entries as specified in configuration
+        # Read stawebg.json for current directory
         sorted_entries = []
         hidden_entries = []
         if "stawebg.json" in entries:
@@ -195,6 +176,26 @@ class Site:
                 sorted_entries = j.get("sort")
                 hidden_entries = j.get("hidden")
 
+        # First we have to find the index file in this directory…
+        idx = None
+        for f in entries:
+            absf = os.path.join(dir_path, f)
+            if isFile(absf) and isCont(absf) and isIndex(absf):
+                idx = Page(os.path.split(dir_path)[1], absf,
+                           self, parent, dir_hidden or f in hidden_entries)
+                entries.remove(f)
+                break
+        # …or create an empty page as index
+        if not idx:
+                idx = Page(os.path.split(dir_path)[1], None,
+                           self, parent, False)
+
+        if parent:
+            parent.appendPage(idx)
+        else:
+            self._root = idx
+
+        # Sort entries as specified in configuration
         sorted_entries.reverse()
         for s in sorted_entries:
             absf = os.path.join(dir_path, s)
@@ -209,17 +210,17 @@ class Site:
         for f in entries:
             absf = os.path.join(dir_path, f)
 
+            hidden = dir_hidden or f in hidden_entries
+
             # HTML or Markdown File -> Page
             if isFile(absf) and isCont(absf):
                 print("\tFound page: " + absf)
-
-                hidden = f in hidden_entries
 
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
                                 hidden))
             # Directory -> Go inside
             elif os.path.isdir(absf):
-                self._readHelper(absf, idx)
+                self._readHelper(absf, idx, hidden)
             # Unknown object
             else:
                 if not absf.endswith(tuple(config["files"]["exclude"])):
