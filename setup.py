@@ -7,13 +7,13 @@ Install stawebg:
 
 """
 
-import sys
-from distutils.core import setup
 import distutils.command.install_scripts
 import shutil
+import sys
+from distutils.core import setup
 
 # Exit, if python version is 2
-if sys.version_info.major == 2:
+if sys.version_info.major != 3:
     sys.exit(1)
 
 
@@ -34,6 +34,7 @@ if __name__ == '__main__':
         description="Static website generator",
         author="Sven Hertle",
         author_email="sven.hertle@googlemail.com",
+        url="https://github.com/svenhertle/stawebg"
         packages=["stawebg"],
         scripts=["stawebg.py"],
         cmdclass={"install_scripts": my_install},
