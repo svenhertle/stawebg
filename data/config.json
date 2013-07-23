@@ -10,6 +10,6 @@
         "markup": {
             ".md": ["markdown"]
         },
-        "exclude":  []
+        "exclude":  ["stawebg.json"]
     }
 }
