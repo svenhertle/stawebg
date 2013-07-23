@@ -25,9 +25,10 @@ class Project:
         try:
             conff = open(os.path.join(self._root_dir, "config.json"), "r")
             config = json.load(conff)
+        except IOError as e:
+            fail("Can't open file: " + str(e))
         except Exception as e:
             fail("Error parsing configuration file: " + str(e))
-        finally:
             conff.close()
 
         # Make directories absolute
