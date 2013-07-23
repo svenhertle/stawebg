@@ -178,6 +178,7 @@ class Site:
 
         # Sort entries as specified in configuration
         sorted_entries = []
+        hidden_entries = []
         if "stawebg.json" in entries:
             absf = os.path.join(dir_path, "stawebg.json")
 
@@ -189,6 +190,7 @@ class Site:
                     fail("Error parsing JSON file (" + absf + "): " + str(e))
 
                 sorted_entries = j.get("sort")
+                hidden_entries = j.get("hidden")
 
         sorted_entries.reverse()
         for s in sorted_entries:
@@ -206,7 +208,12 @@ class Site:
 
             # HTML or Markdown File -> Page
             if isFile(absf) and isCont(absf):
-                self._createPage(dir_path, f, idx)
+                print("\tFound page: " + absf)
+
+                hidden = f in hidden_entries
+
+                idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
+                                hidden))
             # Directory -> Go inside
             elif os.path.isdir(absf):
                 self._readHelper(absf, idx)
@@ -221,19 +228,6 @@ class Site:
                     self._other_files.append(tmp)
 
                     print("\tFound unkown object: " + absf)
-
-    def _createPage(self, dir_path, f, idx):
-        absf = os.path.join(dir_path, f)
-
-        # Hidden files begin with _
-        hidden = f.startswith("_") and len(f) > 1
-        if hidden:
-            f = f[1:]
-
-        print("\tFound page: " + absf)
-
-        idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
-                            hidden))
 
     def createMenu(self, cur_page):
         return self._root.createMenu(cur_page)
