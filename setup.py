@@ -34,7 +34,7 @@ if __name__ == '__main__':
         description="Static website generator",
         author="Sven Hertle",
         author_email="sven.hertle@googlemail.com",
-        url="https://github.com/svenhertle/stawebg"
+        url="https://github.com/svenhertle/stawebg",
         packages=["stawebg"],
         scripts=["stawebg.py"],
         cmdclass={"install_scripts": my_install},
