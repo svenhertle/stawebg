@@ -267,14 +267,14 @@ class Page:
         mkdir(os.path.dirname(self._getDestFile()))
 
         # Use 'codecs' package to support UTF-8?
-        try:
-            outf = open(self._getDestFile(), 'w')
-            tplf = open(self._site.getLayoutTemplate())
-            outf.write(self._replaceKeywords(tplf.read()))
-            tplf.close()
-            outf.close()
-        except Exception as e:
-            fail("Error creating " + self._getDestFile() + ": " + str(e))
+        #try:
+        outf = open(self._getDestFile(), 'w')
+        tplf = open(self._site.getLayoutTemplate())
+        outf.write(self._replaceKeywords(tplf.read()))
+        tplf.close()
+        outf.close()
+        #except Exception as e:
+            #fail("Error creating " + self._getDestFile() + ": " + str(e))
 
         # Copy subpages
         for p in self._subpages:
@@ -288,12 +288,12 @@ class Page:
 
         tool = config["files"]["markup"].get(os.path.splitext(self._absSrc)[1])
 
-        with open(self._absSrc) as src:
+        with open(self._absSrc, "rt") as src:
             text = src.read()
 
         if tool:
             out, err = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                             universal_newlines=True).communicate(text.encode())
+                             universal_newlines=True).communicate(text)
             if err != '':
                 fail(' '.join(tool) + ": " + err)
             return out
