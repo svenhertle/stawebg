@@ -5,26 +5,23 @@ import os
 import re
 from subprocess import Popen, PIPE
 from stawebg.helper import (listFolders, findFiles, copyFile, mkdir, fail,
-                            cleverCapitalize)
-
-config = {}
+                            cleverCapitalize, getConfigFromKey)
 
 isFile = lambda f: os.path.isfile(f)
-isIndex = lambda f: os.path.basename(f) in config['files']['index']
-isCont = lambda f: os.path.splitext(f)[1] in config['files']['content']
-isMarkup = lambda f: os.path.splitext(f)[1] in config['files']['markup']
+isIndex = lambda f,c: os.path.basename(f) in c['files']['index']
+isCont = lambda f,c: os.path.splitext(f)[1] in c['files']['content']
 
 
 class Project:
     def __init__(self, project_dir=""):
-        global config
         self._sites = []
         self._layouts = {}
         self._root_dir = project_dir
+        self._config = None
 
         try:
-            conff = open(os.path.join(self._root_dir, "config.json"), "r")
-            config = json.load(conff)
+            conff = open(os.path.join(self._root_dir, "stawebg.json"), "r")
+            self._config = json.load(conff)
         except IOError as e:
             fail("Can't open file: " + str(e))
         except Exception as e:
@@ -32,8 +29,8 @@ class Project:
             conff.close()
 
         # Make directories absolute
-        for k in config["dirs"]:
-            config["dirs"][k] = os.path.join(self._root_dir, config["dirs"][k])
+        for k in self._config["dirs"]:
+            self._config["dirs"][k] = os.path.join(self._root_dir, self._config["dirs"][k])
 
     def read(self):
         self._readLayouts()
@@ -43,6 +40,12 @@ class Project:
         for s in self._sites:
             s.copy()
 
+    def getConfig(self, key=None, fail=True):
+        if not key:
+            return self._config
+
+        return getConfigFromKey(self._config, key, fail, "stawebg.json")
+
     def getLayoutByName(self, name=None):
         if not name:
             name = "default"
@@ -51,22 +54,23 @@ class Project:
 
     # Add all layouts to list
     def _readLayouts(self):
-        for name in listFolders(config['dirs']['layouts']):
-            self._layouts[name] = Layout(name)
+        for name in listFolders(self.getConfig(['dirs', 'layouts'])):
+            self._layouts[name] = Layout(self, name)
             self._layouts[name].read()
 
     # Add all site directories to list
     def _readSites(self):
-        for s in listFolders(config['dirs']['sites']):
+        for s in listFolders(self.getConfig(['dirs', 'sites'])):
             site = Site(s, self)
             self._sites.append(site)
             site.read()
 
 
 class Layout:
-    def __init__(self, name):
+    def __init__(self, project, name):
+        self._project = project
         self._name = name
-        self._dir = os.path.join(config['dirs']['layouts'], name)
+        self._dir = os.path.join(self._project.getConfig(['dirs', 'layouts']), name)
         self._template = os.path.join(self._dir, 'template.html')
         self._other_files = []
 
@@ -92,32 +96,42 @@ class Site:
         self._name = name
         self._root = None
         self._other_files = []
-        self._layout_name = None
-        self._sitetitle = None
-        self._sitesubtitle = None
+        self._config = None
         print("Found site: " + self._name)
 
+    def getConfig(self, key=None, fail=True):
+        tmp = self._project.getConfig().copy()
+        if self._config:
+            tmp.update(self._config)
+
+        if key:
+            return getConfigFromKey(tmp, key, fail, self._name + ".json")
+
+        return tmp
+
     def getAbsSrcPath(self):
-        return os.path.join(config['dirs']["sites"], self._name)
+        return os.path.join(self.getConfig(['dirs', "sites"]), self._name)
 
     def getAbsDestPath(self):
-        return os.path.join(config['dirs']["out"], self._name)
+        return os.path.join(self.getConfig(['dirs', "out"]), self._name)
 
     def getLayout(self):
-        return self._project.getLayoutByName(self._layout_name)
+        return self._project.getLayoutByName(self.getConfig(["layout"], False))
 
     def getLayoutTemplate(self):
         return self.getLayout().getTemplate()
 
     def getSiteTitle(self):
-        if self._sitetitle:
-            return self._sitetitle
+        tmp = self.getConfig(["title"], False)
+        if tmp:
+            return tmp
 
         return self._name
 
     def getSiteSubtitle(self):
-        if self._sitesubtitle:
-            return self._sitesubtitle
+        tmp = self.getConfig(["subtitle"], False)
+        if tmp:
+            return tmp
 
         return ""
 
@@ -128,7 +142,7 @@ class Site:
     def copy(self):
         # Check if layout exists
         if not self.getLayout():
-            fail("Can't find layout: " + self._layout_name + "\nAbort.")
+            fail("Can't find layout: " + str(self.getConfig(["layout"], False))+ "\nAbort.")
 
         # Pages
         self._root.copy()
@@ -141,21 +155,23 @@ class Site:
             f.copy()
 
     def _readConfig(self):
-        filename = os.path.join(config["dirs"]["sites"], self._name + ".json")
+        filename = os.path.join(self.getConfig(["dirs", "sites"]), self._name + ".json")
 
         if not os.path.isfile(filename):
             fail("Can't find config file: " + filename)
 
-        j = {}
+        self._config = {}
         with open(filename) as f:
             try:
-                j = json.load(f)
+                self._config = json.load(f)
             except Exception as e:
                 fail("Error parsing JSON file (" + filename + "): " + str(e))
 
-            self._sitetitle = j.get("title")
-            self._sitesubtitle = j.get("subtitle")
-            self._layout_name = j.get("layout")
+            # Check if illegel statements (dirs, files.markup)
+            if self._config.get("dirs"):
+                fail("Can't change directories in site config: " + filename)
+            if self._config.get("files") and self._config.get("files").get("markup"):
+                fail("Can't change markup compilers in site config: " + filename)
 
     def _readHelper(self, dir_path, parent, dir_hidden=False):
         entries = sorted(os.listdir(dir_path))
@@ -180,7 +196,7 @@ class Site:
         idx = None
         for f in entries:
             absf = os.path.join(dir_path, f)
-            if isFile(absf) and isCont(absf) and isIndex(absf):
+            if isFile(absf) and isCont(absf, self.getConfig()) and isIndex(absf, self.getConfig()):
                 idx = Page(os.path.split(dir_path)[1], absf,
                            self, parent, dir_hidden or f in hidden_entries)
                 entries.remove(f)
@@ -213,7 +229,7 @@ class Site:
             hidden = dir_hidden or f in hidden_entries
 
             # HTML or Markdown File -> Page
-            if isFile(absf) and isCont(absf):
+            if isFile(absf) and isCont(absf, self.getConfig()):
                 print("\tFound page: " + absf)
 
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
@@ -223,7 +239,7 @@ class Site:
                 self._readHelper(absf, idx, hidden)
             # Unknown object
             else:
-                if not absf.endswith(tuple(config["files"]["exclude"])):
+                if not absf.endswith(tuple(self.getConfig(["files", "exclude"]))):
                     tmp = OtherFile(self.getAbsSrcPath(),
                                     os.path.relpath(
                                         absf, self.getAbsSrcPath()),
@@ -286,7 +302,7 @@ class Page:
         if not self._absSrc:
             return text
 
-        tool = config["files"]["markup"].get(os.path.splitext(self._absSrc)[1])
+        tool = self._site.getConfig(["files", "markup"]).get(os.path.splitext(self._absSrc)[1])
 
         with open(self._absSrc, "rt") as src:
             text = src.read()
@@ -335,7 +351,7 @@ class Page:
         return tmp
 
     def getCurrentLink(self):
-        return '' if self._absSrc and isIndex(self._absSrc) else '../'
+        return '' if self._absSrc and isIndex(self._absSrc, self._site.getConfig()) else '../'
 
     def getLink(self, origin=None):
         tmp = ""
