@@ -46,7 +46,7 @@ class Project:
 
         return getConfigFromKey(self._config, key, fail, "stawebg.json")
 
-    def getLayoutByName(self, name=None):
+    def getLayout(self, name=None):
         if not name:
             name = "default"
 
@@ -115,11 +115,11 @@ class Site:
     def getAbsDestPath(self):
         return os.path.join(self.getConfig(['dirs', "out"]), self._name)
 
-    def getLayout(self):
-        return self._project.getLayoutByName(self.getConfig(["layout"], False))
+    def getLayout(self, name=None):
+        if not name:
+            name = self.getConfig(["layout"], False)
 
-    def getLayoutTemplate(self):
-        return self.getLayout().getTemplate()
+        return self._project.getLayout(name)
 
     def getSiteTitle(self):
         tmp = self.getConfig(["title"], False)
@@ -173,12 +173,14 @@ class Site:
             if self._config.get("files") and self._config.get("files").get("markup"):
                 fail("Can't change markup compilers in site config: " + filename)
 
-    def _readHelper(self, dir_path, parent, dir_hidden=False):
+    def _readHelper(self, dir_path, parent, dir_hidden=False, layout=None):
         entries = sorted(os.listdir(dir_path))
 
         # Read stawebg.json for current directory
         sorted_entries = []
         hidden_entries = []
+        if not layout:
+            layout = self.getLayout()
         if "stawebg.json" in entries:
             absf = os.path.join(dir_path, "stawebg.json")
 
@@ -191,6 +193,9 @@ class Site:
 
                 sorted_entries = j.get("sort")
                 hidden_entries = j.get("hidden")
+                layout_name = j.get("layout")
+                if layout_name:
+                    layout = self.getLayout(layout_name)
 
         # First we have to find the index file in this directory…
         idx = None
@@ -198,13 +203,13 @@ class Site:
             absf = os.path.join(dir_path, f)
             if isFile(absf) and isCont(absf, self.getConfig()) and isIndex(absf, self.getConfig()):
                 idx = Page(os.path.split(dir_path)[1], absf,
-                           self, parent, dir_hidden or f in hidden_entries)
+                           self, parent, dir_hidden or f in hidden_entries, layout)
                 entries.remove(f)
                 break
         # …or create an empty page as index
         if not idx:
                 idx = Page(os.path.split(dir_path)[1], None,
-                           self, parent, False)
+                           self, parent, False, layout)
 
         if parent:
             parent.appendPage(idx)
@@ -233,10 +238,10 @@ class Site:
                 print("\tFound page: " + absf)
 
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
-                                hidden))
+                                hidden, layout))
             # Directory -> Go inside
             elif os.path.isdir(absf):
-                self._readHelper(absf, idx, hidden)
+                self._readHelper(absf, idx, hidden, layout)
             # Unknown object
             else:
                 if not absf.endswith(tuple(self.getConfig(["files", "exclude"]))):
@@ -253,11 +258,12 @@ class Site:
 
 
 class Page:
-    def __init__(self, name, absPath, site, parent, hidden):
+    def __init__(self, name, absPath, site, parent, hidden, layout):
         self._name = name
         self._absSrc = absPath
         self._site = site
         self._hidden = hidden
+        self._layout = layout
         self._parent = parent
         self._subpages = []
 
@@ -279,13 +285,17 @@ class Page:
     def isHidden(self):
         return self._hidden
 
+    def getLayoutTemplate(self):
+        return self._layout.getTemplate()
+
+
     def copy(self):
         mkdir(os.path.dirname(self._getDestFile()))
 
         # Use 'codecs' package to support UTF-8?
         #try:
         outf = open(self._getDestFile(), 'w')
-        tplf = open(self._site.getLayoutTemplate())
+        tplf = open(self.getLayoutTemplate())
         outf.write(self._replaceKeywords(tplf.read()))
         tplf.close()
         outf.close()
