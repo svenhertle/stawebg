@@ -74,15 +74,15 @@ def cleverCapitalize(text):
 #
 # Configuration
 #
-def getConfigFromKey(config, key, fail, filename):
+def getConfigFromKey(config, key, do_fail, filename):
         for k in key:
+            config = config.get(k)
+
             if not config:
-                if fail:
+                if do_fail:
                     fail("Can't find " + str(key) + " in " + filename)
                 else:
-                    break
-
-            config = config.get(k)
+                    return None
 
         return config
 
