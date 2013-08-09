@@ -1,4 +1,6 @@
 {
-    "sort"  :[],
-    "hidden":["about.md","impressum.md"]
+    "files":
+    {
+        "hidden":["about.md","impressum.md"]
+    }
 }

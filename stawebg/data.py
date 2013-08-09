@@ -187,9 +187,12 @@ class Site:
     def _readHelper(self, dir_path, parent, dir_hidden=False, layout=None):
         entries = sorted(os.listdir(dir_path))
 
+        hidden_entries = self.getConfig(["files","hidden"], False)
+        if not hidden_entries:
+            hidden_entries = []
+
         # Read stawebg.json for current directory
         sorted_entries = []
-        hidden_entries = []
         if not layout:
             layout = self.getSiteLayout()
         if "stawebg.json" in entries:
@@ -202,12 +205,16 @@ class Site:
                 except Exception as e:
                     fail("Error parsing JSON file (" + absf + "): " + str(e))
 
-                sorted_entries = j.get("sort")
-                if not sorted_entries:
-                    sorted_entries = []
-                hidden_entries = j.get("hidden")
-                if not hidden_entries:
-                    hidden_entries = []
+                files_tmp = j.get("files")
+                if files_tmp:
+                    sorted_entries = files_tmp.get("sort")
+                    if not sorted_entries:
+                        sorted_entries = []
+
+                    hidden_tmp = files_tmp.get("hidden")
+                    if hidden_tmp:
+                        hidden_entries.extend(hidden_tmp)
+
                 layout_name = j.get("layout")
                 if layout_name:
                     layout = self.getSiteLayout(layout_name)

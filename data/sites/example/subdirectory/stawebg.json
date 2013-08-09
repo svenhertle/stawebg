@@ -1,4 +1,6 @@
 {
-    "sort":["most", "more"],
-    "hidden":[]
+    "files":
+    {
+        "sort":["most", "more"]
+    }
 }
