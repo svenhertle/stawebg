@@ -203,7 +203,11 @@ class Site:
                     fail("Error parsing JSON file (" + absf + "): " + str(e))
 
                 sorted_entries = j.get("sort")
+                if not sorted_entries:
+                    sorted_entries = []
                 hidden_entries = j.get("hidden")
+                if not hidden_entries:
+                    hidden_entries = []
                 layout_name = j.get("layout")
                 if layout_name:
                     layout = self.getSiteLayout(layout_name)
