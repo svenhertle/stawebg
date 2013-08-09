@@ -244,7 +244,8 @@ class Site:
                 self._readHelper(absf, idx, hidden, layout)
             # Unknown object
             else:
-                if not absf.endswith(tuple(self.getConfig(["files", "exclude"]))):
+                exclude = self.getConfig(["files", "exclude"], False)
+                if exclude and not absf.endswith(tuple(exclude)):
                     tmp = OtherFile(self.getAbsSrcPath(),
                                     os.path.relpath(
                                         absf, self.getAbsSrcPath()),
