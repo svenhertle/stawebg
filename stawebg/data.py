@@ -313,10 +313,13 @@ class Page:
         if not self._absSrc:
             return text
 
-        tool = self._site.getConfig(["markup"]).get(os.path.splitext(self._absSrc)[1])
-
         with open(self._absSrc, "rt") as src:
             text = src.read()
+
+        config = self._site.getConfig(["markup"], False)
+        if not config:
+            return text
+        tool = config.get(os.path.splitext(self._absSrc)[1])
 
         if tool:
             out, err = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE,
