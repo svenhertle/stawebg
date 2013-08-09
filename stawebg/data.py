@@ -50,7 +50,12 @@ class Project:
         if not name:
             name = "default"
 
-        return self._layouts.get(name)
+        layout = self._layouts.get(name)
+
+        if not layout:
+            fail("Can't find layout: " + name)
+
+        return layout
 
     # Add all layouts to list
     def _readLayouts(self):
@@ -84,7 +89,10 @@ class Layout:
 
     def copy(self, dest):
         for f in self._other_files:
-            f.copy(dest)
+            f.copy(os.path.join(dest, self.getSubdir()))
+
+    def getSubdir(self):
+        return os.path.join("style", self._name)
 
     def getTemplate(self):
         return self._template
@@ -97,6 +105,7 @@ class Site:
         self._root = None
         self._other_files = []
         self._config = None
+        self._layouts = []
         print("Found site: " + self._name)
 
     def getConfig(self, key=None, fail=True):
@@ -115,11 +124,14 @@ class Site:
     def getAbsDestPath(self):
         return os.path.join(self.getConfig(['dirs', "out"]), self._name)
 
-    def getLayout(self, name=None):
+    def getSiteLayout(self, name=None):
         if not name:
             name = self.getConfig(["layout"], False)
 
-        return self._project.getLayout(name)
+        layout = self._project.getLayout(name)
+        self._layouts.append(layout)
+
+        return layout
 
     def getSiteTitle(self):
         tmp = self.getConfig(["title"], False)
@@ -140,15 +152,14 @@ class Site:
         self._readHelper(self.getAbsSrcPath(), self._root)
 
     def copy(self):
-        # Check if layout exists
-        if not self.getLayout():
-            fail("Can't find layout: " + str(self.getConfig(["layout"], False))+ "\nAbort.")
+        print("Create site: " + self._name)
 
         # Pages
         self._root.copy()
 
-        # Layout
-        self.getLayout().copy(self.getAbsDestPath())
+        # Layouts
+        for l in self._layouts:
+            l.copy(self.getAbsDestPath())
 
         # Other files
         for f in self._other_files:
@@ -180,7 +191,7 @@ class Site:
         sorted_entries = []
         hidden_entries = []
         if not layout:
-            layout = self.getLayout()
+            layout = self.getSiteLayout()
         if "stawebg.json" in entries:
             absf = os.path.join(dir_path, "stawebg.json")
 
@@ -195,7 +206,7 @@ class Site:
                 hidden_entries = j.get("hidden")
                 layout_name = j.get("layout")
                 if layout_name:
-                    layout = self.getLayout(layout_name)
+                    layout = self.getSiteLayout(layout_name)
 
         # First we have to find the index file in this directory…
         idx = None
@@ -208,8 +219,8 @@ class Site:
                 break
         # …or create an empty page as index
         if not idx:
-                idx = Page(os.path.split(dir_path)[1], None,
-                           self, parent, False, layout)
+            idx = Page(os.path.split(dir_path)[1], None,
+                       self, parent, False, layout)
 
         if parent:
             parent.appendPage(idx)
@@ -289,7 +300,6 @@ class Page:
     def getLayoutTemplate(self):
         return self._layout.getTemplate()
 
-
     def copy(self):
         mkdir(os.path.dirname(self._getDestFile()))
 
@@ -332,6 +342,7 @@ class Page:
     def _replaceKeywords(self, text):
         reps = {"%ROOT%": self.getRootLink(),
                 "%CUR%": self.getCurrentLink(),
+                "%LAYOUT%": self.getLayoutDir(),
                 "%TITLE%": self.getTitle(),
                 "%SITETITLE%": self._site.getSiteTitle(),
                 "%SITESUBTITLE%": self._site.getSiteSubtitle(),
@@ -366,6 +377,13 @@ class Page:
 
     def getCurrentLink(self):
         return '' if self._absSrc and isIndex(self._absSrc, self._site) else '../'
+
+    def getLayoutDir(self):
+        tmp = self.getRootLink()
+        if len(tmp):
+            tmp += "/"
+        tmp += self._layout.getSubdir() + "/"
+        return tmp
 
     def getLink(self, origin=None):
         tmp = ""
