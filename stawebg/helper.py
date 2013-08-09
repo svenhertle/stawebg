@@ -86,6 +86,22 @@ def getConfigFromKey(config, key, do_fail):
 
         return config
 
+# Like update, but merge also dict in dict and so on
+# Overrites a with b if there are e.g. two lists with different content
+def mergeConfig(a, b):
+    result = a.copy()
+
+    for k in b:
+        if k in result:
+            if type(b[k]) == dict:
+                result[k] = mergeConfig(result[k], b[k])
+            else:
+                result[k] = b[k]
+        else:
+            result[k] = b[k]
+
+    return result
+
 #
 # Debug and errors
 #

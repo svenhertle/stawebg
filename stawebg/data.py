@@ -5,7 +5,7 @@ import os
 import re
 from subprocess import Popen, PIPE
 from stawebg.helper import (listFolders, findFiles, copyFile, mkdir, fail,
-                            cleverCapitalize, getConfigFromKey)
+                            cleverCapitalize, getConfigFromKey, mergeConfig)
 
 isFile = lambda f: os.path.isfile(f)
 isIndex = lambda f,c: os.path.basename(f) in c.getConfig(['files', 'index'])
@@ -100,9 +100,9 @@ class Site:
         print("Found site: " + self._name)
 
     def getConfig(self, key=None, fail=True):
-        tmp = self._project.getConfig().copy()
+        tmp = self._project.getConfig()
         if self._config:
-            tmp.update(self._config)
+            tmp = mergeConfig(tmp, self._config)
 
         if key:
             return getConfigFromKey(tmp, key, fail)
@@ -245,7 +245,7 @@ class Site:
             # Unknown object
             else:
                 exclude = self.getConfig(["files", "exclude"], False)
-                if exclude and not absf.endswith(tuple(exclude)):
+                if not exclude or not absf.endswith(tuple(exclude)):
                     tmp = OtherFile(self.getAbsSrcPath(),
                                     os.path.relpath(
                                         absf, self.getAbsSrcPath()),
