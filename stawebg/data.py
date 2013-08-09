@@ -44,7 +44,7 @@ class Project:
         if not key:
             return self._config
 
-        return getConfigFromKey(self._config, key, fail, "stawebg.json")
+        return getConfigFromKey(self._config, key, fail)
 
     def getLayout(self, name=None):
         if not name:
@@ -105,7 +105,7 @@ class Site:
             tmp.update(self._config)
 
         if key:
-            return getConfigFromKey(tmp, key, fail, self._name + ".json")
+            return getConfigFromKey(tmp, key, fail)
 
         return tmp
 
