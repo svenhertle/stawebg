@@ -8,8 +8,8 @@ from stawebg.helper import (listFolders, findFiles, copyFile, mkdir, fail,
                             cleverCapitalize, getConfigFromKey)
 
 isFile = lambda f: os.path.isfile(f)
-isIndex = lambda f,c: os.path.basename(f) in c['files']['index']
-isCont = lambda f,c: os.path.splitext(f)[1] in c['files']['content']
+isIndex = lambda f,c: os.path.basename(f) in c.getConfig(['files', 'index'])
+isCont = lambda f,c: os.path.splitext(f)[1] in c.getConfig(['files', 'content'])
 
 
 class Project:
@@ -167,10 +167,10 @@ class Site:
             except Exception as e:
                 fail("Error parsing JSON file (" + filename + "): " + str(e))
 
-            # Check if illegel statements (dirs, files.markup)
+            # Check if illegel statements (dirs, markup)
             if self._config.get("dirs"):
                 fail("Can't change directories in site config: " + filename)
-            if self._config.get("files") and self._config.get("files").get("markup"):
+            if self._config.get("markup"):
                 fail("Can't change markup compilers in site config: " + filename)
 
     def _readHelper(self, dir_path, parent, dir_hidden=False, layout=None):
@@ -201,7 +201,7 @@ class Site:
         idx = None
         for f in entries:
             absf = os.path.join(dir_path, f)
-            if isFile(absf) and isCont(absf, self.getConfig()) and isIndex(absf, self.getConfig()):
+            if isFile(absf) and isCont(absf, self) and isIndex(absf, self):
                 idx = Page(os.path.split(dir_path)[1], absf,
                            self, parent, dir_hidden or f in hidden_entries, layout)
                 entries.remove(f)
@@ -234,7 +234,7 @@ class Site:
             hidden = dir_hidden or f in hidden_entries
 
             # HTML or Markdown File -> Page
-            if isFile(absf) and isCont(absf, self.getConfig()):
+            if isFile(absf) and isCont(absf, self):
                 print("\tFound page: " + absf)
 
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
@@ -312,7 +312,7 @@ class Page:
         if not self._absSrc:
             return text
 
-        tool = self._site.getConfig(["files", "markup"]).get(os.path.splitext(self._absSrc)[1])
+        tool = self._site.getConfig(["markup"]).get(os.path.splitext(self._absSrc)[1])
 
         with open(self._absSrc, "rt") as src:
             text = src.read()
@@ -361,7 +361,7 @@ class Page:
         return tmp
 
     def getCurrentLink(self):
-        return '' if self._absSrc and isIndex(self._absSrc, self._site.getConfig()) else '../'
+        return '' if self._absSrc and isIndex(self._absSrc, self._site) else '../'
 
     def getLink(self, origin=None):
         tmp = ""
