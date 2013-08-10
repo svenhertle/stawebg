@@ -1,0 +1,41 @@
+#header
+{
+    width:100%;
+}
+
+#middle-header
+{
+    width:100%;
+    height:1.5em;
+
+    font-size:250%;
+    font-weight:bold;
+}
+
+#middle-header a
+{
+    text-decoration:none;
+}
+
+#bottom-header
+{
+    width:100%;
+    height:1.5em;
+
+    color:#eee8d5;
+    background-color:#073642;
+
+    font-size:110%;
+}
+
+#bottom-header a
+{
+    color:#eee8d5;
+
+    text-decoration:none;
+}
+
+#bottom-header a:hover, a:active
+{
+    text-decoration:underline;
+}

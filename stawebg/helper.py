@@ -72,37 +72,6 @@ def cleverCapitalize(text):
         return text[0].upper() + text[1:]
 
 #
-# Configuration
-#
-def getConfigFromKey(config, key, do_fail):
-        for k in key:
-            config = config.get(k)
-
-            if not config:
-                if do_fail:
-                    fail("Can't find " + str(key))
-                else:
-                    return None
-
-        return config
-
-# Like update, but merge also dict in dict and so on
-# Overrites a with b if there are e.g. two lists with different content
-def mergeConfig(a, b):
-    result = a.copy()
-
-    for k in b:
-        if k in result:
-            if type(b[k]) == dict:
-                result[k] = mergeConfig(result[k], b[k])
-            else:
-                result[k] = b[k]
-        else:
-            result[k] = b[k]
-
-    return result
-
-#
 # Debug and errors
 #
 

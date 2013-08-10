@@ -1,15 +1,16 @@
 #!/usr/bin/python3
 
 import json
-import os
+import os,sys
 import re
 from subprocess import Popen, PIPE
+from stawebg.config import Config
 from stawebg.helper import (listFolders, findFiles, copyFile, mkdir, fail,
-                            cleverCapitalize, getConfigFromKey, mergeConfig)
+                            cleverCapitalize)
 
 isFile = lambda f: os.path.isfile(f)
-isIndex = lambda f,c: os.path.basename(f) in c.getConfig(['files', 'index'])
-isCont = lambda f,c: os.path.splitext(f)[1] in c.getConfig(['files', 'content'])
+isIndex = lambda f, c: os.path.basename(f) in c.getConfig(['files', 'index'])
+isCont = lambda f, c: os.path.splitext(f)[1] in c.getConfig(['files', 'content'])
 
 
 class Project:
@@ -17,20 +18,21 @@ class Project:
         self._sites = []
         self._layouts = {}
         self._root_dir = project_dir
-        self._config = None
 
-        try:
-            conff = open(os.path.join(self._root_dir, "stawebg.json"), "r")
-            self._config = json.load(conff)
-        except IOError as e:
-            fail("Can't open file: " + str(e))
-        except Exception as e:
-            fail("Error parsing configuration file: " + str(e))
-            conff.close()
+        config_struct = {"dirs":
+                (dict, {"sites": (str, None, False),
+                    "layouts": (str, None, False),
+                    "out": (str, None, False)}, False),
+                "files": (dict, {"index": (list, str, True),
+                    "content": (list, str, True),
+                    "exclude": (list, str, True)}, True),
+                "markup": ("mapping", (str, str, "+"), True)}
+        self._config = Config(os.path.join(self._root_dir, "stawebg.json"), config_struct)
 
         # Make directories absolute
-        for k in self._config["dirs"]:
-            self._config["dirs"][k] = os.path.join(self._root_dir, self._config["dirs"][k])
+        dirs = self._config.get(["dirs"])
+        for k in dirs:
+            dirs[k] = os.path.join(self._root_dir, dirs[k])
 
     def read(self):
         self._readLayouts()
@@ -40,11 +42,8 @@ class Project:
         for s in self._sites:
             s.copy()
 
-    def getConfig(self, key=None, fail=True):
-        if not key:
-            return self._config
-
-        return getConfigFromKey(self._config, key, fail)
+    def getConfig(self, key, fail=True):
+        return self._config.get(key, fail)
 
     def getLayout(self, name=None):
         if not name:
@@ -104,19 +103,12 @@ class Site:
         self._name = name
         self._root = None
         self._other_files = []
-        self._config = None
+        self._config = self._project._config
         self._layouts = []
         print("Found site: " + self._name)
 
-    def getConfig(self, key=None, fail=True):
-        tmp = self._project.getConfig()
-        if self._config:
-            tmp = mergeConfig(tmp, self._config)
-
-        if key:
-            return getConfigFromKey(tmp, key, fail)
-
-        return tmp
+    def getConfig(self, key, fail=True):
+        return self._config.get(key, fail)
 
     def getAbsSrcPath(self):
         return os.path.join(self.getConfig(['dirs', "sites"]), self._name)
@@ -171,23 +163,21 @@ class Site:
         if not os.path.isfile(filename):
             fail("Can't find config file: " + filename)
 
-        self._config = {}
-        with open(filename) as f:
-            try:
-                self._config = json.load(f)
-            except Exception as e:
-                fail("Error parsing JSON file (" + filename + "): " + str(e))
-
-            # Check if illegel statements (dirs, markup)
-            if self._config.get("dirs"):
-                fail("Can't change directories in site config: " + filename)
-            if self._config.get("markup"):
-                fail("Can't change markup compilers in site config: " + filename)
+        config_struct = {"dirs": (None, None, None),
+                "markup": (None, None, None),
+                "title": (str, None, True),
+                "subtitle": (str, None, True),
+                "layout": (str, None, True),
+                "files": (dict, {"index": (list, str, True),
+                    "content": (list, str, True),
+                    "exclude": (list, str, True)}, True)}
+        site_config = Config(filename, config_struct)
+        self._config = Config.merge(self._config, site_config, True)
 
     def _readHelper(self, dir_path, parent, dir_hidden=False, layout=None):
         entries = sorted(os.listdir(dir_path))
 
-        hidden_entries = self.getConfig(["files","hidden"], False)
+        hidden_entries = self.getConfig(["files", "hidden"], False)
         if not hidden_entries:
             hidden_entries = []
 
@@ -315,14 +305,14 @@ class Page:
         mkdir(os.path.dirname(self._getDestFile()))
 
         # Use 'codecs' package to support UTF-8?
-        #try:
-        outf = open(self._getDestFile(), 'w')
-        tplf = open(self.getLayoutTemplate())
-        outf.write(self._replaceKeywords(tplf.read()))
-        tplf.close()
-        outf.close()
-        #except Exception as e:
-            #fail("Error creating " + self._getDestFile() + ": " + str(e))
+        try:
+            outf = open(self._getDestFile(), 'w')
+            tplf = open(self.getLayoutTemplate())
+            outf.write(self._replaceKeywords(tplf.read()))
+            tplf.close()
+            outf.close()
+        except Exception as e:
+            fail("Error creating " + self._getDestFile() + ": " + str(e))
 
         # Copy subpages
         for p in self._subpages:
