@@ -176,7 +176,6 @@ class Site:
         if page_config:
             page_config.delete(["files", "sort"], False)
         else:
-            # Delete config, that should not be inherited
             page_config = self._config
 
         entries = sorted(os.listdir(dir_path))
@@ -203,8 +202,9 @@ class Site:
                 break
         # …or create an empty page as index
         if not idx:
-            idx = Page(os.path.split(dir_path)[1], None,
-                       self, parent, False, page_config)
+            dirname = os.path.split(dir_path)[1]
+            idx = Page(dirname, None, self, parent,
+                    dir_hidden or dirname in page_config.get(["files","hidden"], False, []), page_config)
 
         if parent:
             parent.appendPage(idx)
@@ -215,7 +215,6 @@ class Site:
         sorted_entries = page_config.get(["files","sort"], False, [])
         for s in reversed(sorted_entries):
             absf = os.path.join(dir_path, s)
-
             if not s in entries:
                 print("\tFile not found (specified in sort): " + absf)
             else:
@@ -225,13 +224,11 @@ class Site:
         # Make absolute paths and check if it's a page
         for f in entries:
             absf = os.path.join(dir_path, f)
-
             hidden = dir_hidden or f in page_config.get(["files","hidden"], False, [])
 
             # HTML or Markdown File -> Page
             if isFile(absf) and isCont(absf, self):
                 print("\tFound page: " + absf)
-
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
                                 hidden, page_config))
             # Directory -> Go inside
@@ -245,7 +242,6 @@ class Site:
                                         absf, self.getAbsSrcPath()),
                                     self.getAbsDestPath())
                     self._other_files.append(tmp)
-
                     print("\tFound unkown object: " + absf)
 
     def createMenu(self, cur_page):
