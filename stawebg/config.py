@@ -17,18 +17,29 @@ class Config:
         if filename:
             self._read(filename, struct)
 
-    def get(self, key, do_fail=True):
+    def get(self, key, do_fail=True, default=None):
         config = self._config
         for k in key:
             config = config.get(k)
 
             if not config:
                 if do_fail:
-                    fail("Can't find " + str(key) + " (this shouldn't happen!)")
+                    fail("Can't find " + str(key))
                 else:
-                    return None
+                    return default
 
         return config
+
+    def delete(self, key, do_fail=False):
+        data = self.get(key[:-1], do_fail)
+
+        if key[-1] in data:
+            del data[key[-1]]
+        elif do_fail:
+            fail("Can't find " + str(key))
+
+    def copy(self):
+        return deepcopy(self)
 
     def _read(self, filename, struct):
         try:

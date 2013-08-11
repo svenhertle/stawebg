@@ -116,14 +116,12 @@ class Site:
     def getAbsDestPath(self):
         return os.path.join(self.getConfig(['dirs', "out"]), self._name)
 
-    def getSiteLayout(self, name=None):
-        if not name:
-            name = self.getConfig(["layout"], False)
+    def getProject(self):
+        return self._project
 
+    def addLayout(self, name):
         layout = self._project.getLayout(name)
         self._layouts.append(layout)
-
-        return layout
 
     def getSiteTitle(self):
         tmp = self.getConfig(["title"], False)
@@ -174,40 +172,25 @@ class Site:
         site_config = Config(filename, config_struct)
         self._config = Config.merge(self._config, site_config, True)
 
-    def _readHelper(self, dir_path, parent, dir_hidden=False, layout=None):
+    def _readHelper(self, dir_path, parent, dir_hidden=False, page_config=None):
+        if page_config:
+            page_config.delete(["files", "sort"], False)
+        else:
+            # Delete config, that should not be inherited
+            page_config = self._config
+
         entries = sorted(os.listdir(dir_path))
 
-        hidden_entries = self.getConfig(["files", "hidden"], False)
-        if not hidden_entries:
-            hidden_entries = []
-
-        # Read stawebg.json for current directory
-        sorted_entries = []
-        if not layout:
-            layout = self.getSiteLayout()
         if "stawebg.json" in entries:
-            absf = os.path.join(dir_path, "stawebg.json")
+            config_struct = {"layout": (str, None, True),
+                "files": (dict, {"sort": (list, str, True),
+                    "exclude": (list, str, True),
+                    "hidden": (list, str, True)}, True)}
+            tmp_config = Config(os.path.join(dir_path, "stawebg.json"), config_struct)
+            page_config = Config.merge(page_config, tmp_config, False)
 
-            j = {}
-            with open(absf) as f:
-                try:
-                    j = json.load(f)
-                except Exception as e:
-                    fail("Error parsing JSON file (" + absf + "): " + str(e))
-
-                files_tmp = j.get("files")
-                if files_tmp:
-                    sorted_entries = files_tmp.get("sort")
-                    if not sorted_entries:
-                        sorted_entries = []
-
-                    hidden_tmp = files_tmp.get("hidden")
-                    if hidden_tmp:
-                        hidden_entries.extend(hidden_tmp)
-
-                layout_name = j.get("layout")
-                if layout_name:
-                    layout = self.getSiteLayout(layout_name)
+        # Add layout to list -> copy later
+        self.addLayout(page_config.get(["layout"], False))
 
         # First we have to find the index file in this directory…
         idx = None
@@ -215,13 +198,13 @@ class Site:
             absf = os.path.join(dir_path, f)
             if isFile(absf) and isCont(absf, self) and isIndex(absf, self):
                 idx = Page(os.path.split(dir_path)[1], absf,
-                           self, parent, dir_hidden or f in hidden_entries, layout)
+                        self, parent, dir_hidden or f in page_config.get(["files","hidden"], False, []), page_config)
                 entries.remove(f)
                 break
         # …or create an empty page as index
         if not idx:
             idx = Page(os.path.split(dir_path)[1], None,
-                       self, parent, False, layout)
+                       self, parent, False, page_config)
 
         if parent:
             parent.appendPage(idx)
@@ -229,8 +212,8 @@ class Site:
             self._root = idx
 
         # Sort entries as specified in configuration
-        sorted_entries.reverse()
-        for s in sorted_entries:
+        sorted_entries = page_config.get(["files","sort"], False, [])
+        for s in reversed(sorted_entries):
             absf = os.path.join(dir_path, s)
 
             if not s in entries:
@@ -243,21 +226,20 @@ class Site:
         for f in entries:
             absf = os.path.join(dir_path, f)
 
-            hidden = dir_hidden or f in hidden_entries
+            hidden = dir_hidden or f in page_config.get(["files","hidden"], False, [])
 
             # HTML or Markdown File -> Page
             if isFile(absf) and isCont(absf, self):
                 print("\tFound page: " + absf)
 
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
-                                hidden, layout))
+                                hidden, page_config))
             # Directory -> Go inside
             elif os.path.isdir(absf):
-                self._readHelper(absf, idx, hidden, layout)
+                self._readHelper(absf, idx, hidden, page_config.copy())
             # Unknown object
             else:
-                exclude = self.getConfig(["files", "exclude"], False)
-                if not exclude or not absf.endswith(tuple(exclude)):
+                if not absf.endswith(tuple(page_config.get(["files", "exclude"], False, []))):
                     tmp = OtherFile(self.getAbsSrcPath(),
                                     os.path.relpath(
                                         absf, self.getAbsSrcPath()),
@@ -271,14 +253,14 @@ class Site:
 
 
 class Page:
-    def __init__(self, name, absPath, site, parent, hidden, layout):
+    def __init__(self, name, absPath, site, parent, hidden, config):
         self._name = name
         self._absSrc = absPath
         self._site = site
         self._hidden = hidden
-        self._layout = layout
         self._parent = parent
         self._subpages = []
+        self._config = config
 
     def appendPage(self, p):
         self._subpages.append(p)
@@ -298,8 +280,9 @@ class Page:
     def isHidden(self):
         return self._hidden
 
-    def getLayoutTemplate(self):
-        return self._layout.getTemplate()
+    def getLayout(self):
+        layout = self._config.get(["layout"], False)
+        return self._site.getProject().getLayout(layout)
 
     def copy(self):
         mkdir(os.path.dirname(self._getDestFile()))
@@ -307,11 +290,11 @@ class Page:
         # Use 'codecs' package to support UTF-8?
         try:
             outf = open(self._getDestFile(), 'w')
-            tplf = open(self.getLayoutTemplate())
+            tplf = open(self.getLayout().getTemplate())
             outf.write(self._replaceKeywords(tplf.read()))
             tplf.close()
             outf.close()
-        except Exception as e:
+        except IOError as e: #TODO: check exceptions
             fail("Error creating " + self._getDestFile() + ": " + str(e))
 
         # Copy subpages
@@ -383,7 +366,7 @@ class Page:
         tmp = self.getRootLink()
         if len(tmp):
             tmp += "/"
-        tmp += self._layout.getSubdir() + "/"
+        tmp += self.getLayout().getSubdir() + "/"
         return tmp
 
     def getLink(self, origin=None):
