@@ -58,7 +58,7 @@ class Config:
 
         result = {}
         for k in struct:
-            if obj.get(k):
+            if not obj.get(k) is None:
                 # Check dictionary
                 if struct[k][0] == dict:
                     if type(obj[k]) == dict:
@@ -93,7 +93,7 @@ class Config:
                 fail("Can't find " + str(k) + " in " + self._displayname)
 
         if len(obj):
-            print("Warning: unknown config options: " + str(obj))
+            print("Warning: unknown config options in file " + self._displayname + ": " + str(obj))
 
         return result
 

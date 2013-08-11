@@ -25,6 +25,7 @@ class Project:
                     "out": (str, None, False)}, False),
                 "files": (dict, {"index": (list, str, True),
                     "content": (list, str, True),
+                    "hidden": (list, str, True),
                     "exclude": (list, str, True)}, True),
                 "markup": ("mapping", (str, str, "+"), True)}
         self._config = Config(os.path.join(self._root_dir, "stawebg.json"), config_struct)
@@ -168,6 +169,7 @@ class Site:
                 "layout": (str, None, True),
                 "files": (dict, {"index": (list, str, True),
                     "content": (list, str, True),
+                    "hidden": (list, str, True),
                     "exclude": (list, str, True)}, True)}
         site_config = Config(filename, config_struct)
         self._config = Config.merge(self._config, site_config, True)
