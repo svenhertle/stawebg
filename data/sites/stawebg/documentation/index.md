@@ -7,20 +7,20 @@ You can find an example site with the correct file structure in the [git repo](h
 Every stawebg project must have this directory structure:
 
 <pre>
-config.json
+stawebg.json
 layouts/
     default/
-        head.html
-        bottom.html
+        template.html
 sites/
+    title.json
     title/
-        _config.json
         index.md
 </pre>
 
 ## Run stawebg ##
 
-You have to call stawebg in the root directory of your project.
+You have to call stawebg with the path of the root directory of your project as a parameter.
+You don't need this parameter if your work directory is this the root directory.
 stawebg will create the directory out and subdirectories for each site:
 
 <pre>
@@ -32,5 +32,5 @@ out/
 ## Multiple sites ##
 
 You can create more than one site with this setup.
-Add a new directory to sites/ an stawebg will create a new site.
+Add a new directory to sites/ and stawebg will create a new site.
 Both sites can use the same layout.

@@ -20,5 +20,3 @@ sites/title/_about.html -> sites/title/about/index.html
 
 All other files are copied as they are.
 You can define an exclude list for this files (see [configuration](%CUR%configuration)).
-
-Files that begin with a _ are not copied (e.g. _config.json).

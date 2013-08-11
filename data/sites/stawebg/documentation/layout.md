@@ -1,13 +1,14 @@
 # Layout #
 
-## head.html and bottom.html ##
+## template.html ##
 
-The layout is split into two files: head.html and bottom.html.
-The final page is generated from this files and the content: head.html + content (HTML, maybe from Markdown) + bottom.html.
+TODO: Where is the file template.html?
 
 ## Variables ##
 
 There are some variables that are replaced during the generation of the output:
+
+TODO: Missing: LAYOUT, CONTENT
 
 <table>
     <tr>

@@ -10,6 +10,6 @@ Features
 
 * Simple ;)
 * Support for markup languages, e.g. Markdown
-* Use layouts for multiple sites
+* Use layouts for multiple sites or multiple layouts for one site
 * Automtic menu generation
 * Hidden pages, that are not visible in the menu
