@@ -314,11 +314,10 @@ class Page:
         tool = config.get(os.path.splitext(self._absSrc)[1])
 
         if tool:
-            out, err = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                             universal_newlines=True).communicate(text)
-            if err != '':
-                fail(' '.join(tool) + ": " + err)
-            return out
+            out, err = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE).communicate(text.encode())
+            if len(err):
+                fail(' '.join(tool) + ": " + err.decode())
+            return out.decode()
         return text
 
     def _replaceKeywords(self, text):
