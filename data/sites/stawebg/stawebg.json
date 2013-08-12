@@ -2,6 +2,6 @@
     "files":
     {
         "hidden":["about.md","impressum.md"],
-        "sort":["documentation","download","markup","license"]
+        "sort":["documentation","download.md","markup","license.md"]
     }
 }
