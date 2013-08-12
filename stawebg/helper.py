@@ -55,7 +55,7 @@ def mkdir(path):
         os.makedirs(path)
     except OSError as e:
         if e.errno != errno.EEXIST:
-            raise
+            fail(str(e))
 
 
 #
