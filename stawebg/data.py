@@ -389,11 +389,14 @@ class Page:
         else:
             return cleverCapitalize(self.getName())
 
-    def getTitle(self):
+    def getTitle(self, no_home=False):
         if not self.getParent():
-            return self._site.getSiteTitle() + " > " + self.getShortTitle()
+            if no_home:
+                return self._site.getSiteTitle()
+            else:
+                return self._site.getSiteTitle() + " > " + self.getShortTitle()
         else:
-            return self.getParent().getTitle() + " > " + self.getShortTitle()
+            return self.getParent().getTitle(True) + " > " + self.getShortTitle()
 
     def createMenu(self, cur_page, last=False):
         items = self._subpages[:]
