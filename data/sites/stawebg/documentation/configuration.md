@@ -10,24 +10,22 @@ But there are some options that can only be in one of this levels, e.g. the mark
 This file sets the configuration for the complete stawebg project.
 The default configuration looks like this:
 
-<pre>
-{
-    "dirs": {
-        "sites":    "sites",
-        "layouts":  "layouts",
-        "out":      "out"
-    },
-    "files": {
-        "index":    ["index.html", "index.md"],
-        "content":  [".html", ".md"],
-        "hidden":   [],
-        "exclude":  ["stawebg.json"]
-    },
-    "markup": {
-        ".md": ["markdown"]
-    }
-}
-</pre>
+ {
+     "dirs": {
+         "sites":    "sites",
+         "layouts":  "layouts",
+         "out":      "out"
+     },
+     "files": {
+         "index":    ["index.html", "index.md"],
+         "content":  [".html", ".md"],
+         "hidden":   [],
+         "exclude":  ["stawebg.json"]
+     },
+     "markup": {
+         ".md": ["markdown"]
+     }
+ }
 
 ### dirs ###
 
@@ -42,10 +40,8 @@ You can use an absolute path too.
 For all other files stawebg will create subdirectories in the output.
 Here's an example:
 
-<pre>
-sites/title/index.md -> out/sites/index.html
-sites/title/about.md -> out/sites/about/index.html
-</pre>
+ sites/title/index.md -> out/sites/index.html
+ sites/title/about.md -> out/sites/about/index.html
 
 #### content ####
 This are the file extensions for files with content.
@@ -59,9 +55,7 @@ This files or directories are not visible in the menu.
 This is a list of all file extensions that are not copied.
 For example, you can exlude all PHP files:
 
-<pre>
-"exclude":  [".php"]
-</pre>
+ "exclude":  [".php"]
 
 ### markup ###
 A list of file extensions and used markup compilers.
@@ -77,27 +71,23 @@ You can use this also to translate manpages to html for example.
 Each site has a configuration file for site specific things.
 This file has the path sites/*title*.json for the site *title* and looks like this:
 
-<pre>
-{
-    "title":    "test site",
-    "subtitle": "demo of stawebg"
-    "layout":   "default"
-}
-</pre>
+ {
+     "title":    "test site",
+     "subtitle": "demo of stawebg"
+     "layout":   "default"
+ }
 
 The title and subtitle can be used in the [layout](%CUR%layout).
 The layout name is the name of the directory in layout/ that contains the file template.html and layout related files like CSS files.
 
 You can overwrite the following options from the global configuration here:
 
-<pre>
-"files": {
-    "index":    ["index.html", "index.md"],
-    "content":  [".html", ".md"],
-    "hidden":   [],
-    "exclude":  ["stawebg.json"]
-}
-</pre>
+ "files": {
+     "index":    ["index.html", "index.md"],
+     "content":  [".html", ".md"],
+     "hidden":   [],
+     "exclude":  ["stawebg.json"]
+ }
 
 ## Per directory: stawebg.json in subdirectory ##
 

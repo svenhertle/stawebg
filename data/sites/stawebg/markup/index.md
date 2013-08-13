@@ -6,5 +6,6 @@ If you wrote an useful program please send it to us and we will publish it here.
 
 Here's an overview of some markup compiler:
 
-* Markdown
+* Markdown ([discount](http://www.pell.portland.or.us/~orc/Code/discount/) is a
+fast markdown text to html converter)
 * TODO: more and links
