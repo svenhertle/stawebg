@@ -2,7 +2,8 @@
     "dirs": {
         "sites":    "sites",
         "layouts":  "layouts",
-        "out":      "out"
+        "out":      "out",
+        "test":     "test"
     },
     "files": {
         "index":    ["index.html", "index.md"],

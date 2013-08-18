@@ -14,15 +14,17 @@ isCont = lambda f, c: os.path.splitext(f)[1] in c.getConfig(['files', 'content']
 
 
 class Project:
-    def __init__(self, project_dir=""):
+    def __init__(self, project_dir="", test=False):
         self._sites = []
         self._layouts = {}
         self._root_dir = project_dir
+        self._test = test
 
         config_struct = {"dirs":
                 (dict, {"sites": (str, None, False),
                     "layouts": (str, None, False),
-                    "out": (str, None, False)}, False),
+                    "out": (str, None, False),
+                    "test": (str, None, True)}, False),
                 "files": (dict, {"index": (list, str, True),
                     "content": (list, str, True),
                     "hidden": (list, str, True),
@@ -56,6 +58,12 @@ class Project:
             fail("Can't find layout: " + name)
 
         return layout
+
+    def getOutputDir(self):
+        if self._test:
+            return self.getConfig(["dirs", "test"])
+        else:
+            return self.getConfig(["dirs", "out"])
 
     # Add all layouts to list
     def _readLayouts(self):
@@ -115,7 +123,7 @@ class Site:
         return os.path.join(self.getConfig(['dirs', "sites"]), self._name)
 
     def getAbsDestPath(self):
-        return os.path.join(self.getConfig(['dirs', "out"]), self._name)
+        return os.path.join(self._project.getOutputDir(), self._name)
 
     def getProject(self):
         return self._project
