@@ -11,6 +11,7 @@ import distutils.command.install_scripts
 import shutil
 import sys
 from distutils.core import setup
+from stawebg.data import version
 
 # Exit, if python version is 2
 if sys.version_info.major != 3:
@@ -29,12 +30,12 @@ class my_install(distutils.command.install_scripts.install_scripts):
 if __name__ == '__main__':
     setup(
         name="stawebg",
-        version="0.1",
+        version=version,
         license="MIT",
         description="Static website generator",
         author="Sven Hertle",
         author_email="sven.hertle@googlemail.com",
-        url="https://github.com/svenhertle/stawebg",
+        url="http://stawebg.narfi.net",
         packages=["stawebg"],
         scripts=["stawebg.py"],
         cmdclass={"install_scripts": my_install},

@@ -8,6 +8,8 @@ from stawebg.config import Config
 from stawebg.helper import (listFolders, findFiles, copyFile, mkdir, fail,
                             cleverCapitalize)
 
+version="0.1"
+
 isFile = lambda f: os.path.isfile(f)
 isIndex = lambda f, c: os.path.basename(f) in c.getConfig(['files', 'index'])
 isCont = lambda f, c: os.path.splitext(f)[1] in c.getConfig(['files', 'content'])
