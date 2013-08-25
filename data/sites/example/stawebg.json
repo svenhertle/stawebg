@@ -1,6 +1,6 @@
 {
     "files":
     {
-        "hidden":["about.md"]
+        "hidden":["about\\.md"]
     }
 }

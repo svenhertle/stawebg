@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 import errno
+import re
 
 #
 # File IO
@@ -72,7 +73,7 @@ def mkdir(path):
 
 
 #
-# Strings
+# Strings and Regex
 #
 
 
@@ -83,6 +84,13 @@ def cleverCapitalize(text):
         return text.upper()
     else:
         return text[0].upper() + text[1:]
+
+def matchList(string, regex_lst):
+    for r in regex_lst:
+        if re.match(r, string):
+            return True
+
+    return False
 
 #
 # Debug and errors

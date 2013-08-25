@@ -6,13 +6,16 @@ import re
 from subprocess import Popen, PIPE
 from stawebg.config import Config
 from stawebg.helper import (listFolders, findFiles, findDirs, copyFile, mkdir, fail,
-                            cleverCapitalize)
+                            matchList, cleverCapitalize)
 
 version="0.1"
 
 isFile = lambda f: os.path.isfile(f)
-isIndex = lambda f, c: os.path.basename(f) in c.getConfig(['files', 'index'])
-isCont = lambda f, c: os.path.splitext(f)[1] in c.getConfig(['files', 'content'])
+matchPath = lambda f, c: os.path.abspath(f)[len(os.path.abspath(c.getAbsSrcPath()))+1:]
+isIndex = lambda f, site: matchList(matchPath(f, site), site.getConfig(['files', 'index']))
+isCont = lambda f, site: matchList(matchPath(f, site), site.getConfig(['files', 'content']))
+isExcluded = lambda f, site, c: matchList(matchPath(f, site), c.get(['files', 'exclude'], False, []))
+isHidden = lambda f, site, c: matchList(matchPath(f, site), c.get(['files', 'hidden'], False, []))
 
 
 class Project:
@@ -39,6 +42,8 @@ class Project:
         for k in dirs:
             dirs[k] = os.path.join(self._root_dir, dirs[k])
 
+        print(self.getConfig(["dirs", "sites"]))
+
     def read(self):
         self._readLayouts()
         self._readSites()
@@ -47,8 +52,8 @@ class Project:
         for s in self._sites:
             s.copy()
 
-    def getConfig(self, key, fail=True):
-        return self._config.get(key, fail)
+    def getConfig(self, key, fail=True, default=None):
+        return self._config.get(key, fail, default)
 
     def getLayout(self, name=None):
         if not name:
@@ -119,8 +124,8 @@ class Site:
         self._file_index = []
         print("Found site: " + self._name)
 
-    def getConfig(self, key, fail=True):
-        return self._config.get(key, fail)
+    def getConfig(self, key, fail=True, default=None):
+        return self._config.get(key, fail, default)
 
     def getAbsSrcPath(self):
         return os.path.join(self.getConfig(['dirs', "sites"]), self._name)
@@ -215,14 +220,14 @@ class Site:
             absf = os.path.join(dir_path, f)
             if isFile(absf) and isCont(absf, self) and isIndex(absf, self):
                 idx = Page(os.path.split(dir_path)[1], absf,
-                        self, parent, dir_hidden or f in page_config.get(["files","hidden"], False, []), page_config)
+                        self, parent, dir_hidden or isHidden(absf, self, page_config), page_config)
                 entries.remove(f)
                 break
         # …or create an empty page as index
         if not idx:
             dirname = os.path.split(dir_path)[1]
-            idx = Page(dirname, None, self, parent,
-                    dir_hidden or dirname in page_config.get(["files","hidden"], False, []), page_config)
+            idx = Page(dirname, None, self, parent, dir_hidden or isHidden(dirname, self, page_config),
+                    page_config)
 
         if parent:
             parent.appendPage(idx)
@@ -242,7 +247,7 @@ class Site:
         # Make absolute paths and check if it's a page
         for f in entries:
             absf = os.path.join(dir_path, f)
-            hidden = dir_hidden or f in page_config.get(["files","hidden"], False, [])
+            hidden = dir_hidden or isHidden(absf, self, page_config)
 
             # HTML or Markdown File -> Page
             if isFile(absf) and isCont(absf, self):
@@ -254,7 +259,7 @@ class Site:
                 self._readHelper(absf, idx, hidden, page_config.copy())
             # Unknown object
             else:
-                if not absf.endswith(tuple(page_config.get(["files", "exclude"], False, []))):
+                if not isExcluded(absf, self, page_config):
                     tmp = OtherFile(self.getAbsSrcPath(),
                                     os.path.relpath(
                                         absf, self.getAbsSrcPath()),

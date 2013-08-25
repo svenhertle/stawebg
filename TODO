@@ -1,3 +1,2 @@
 * stawebg.json: change url or menu title for content files
-* Use more regex: excludes, hidden, ...) -> functions like isHidden(filename) for better code
 * Blog feature (e.g. for news)
