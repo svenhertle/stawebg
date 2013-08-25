@@ -5,7 +5,7 @@ import os,sys
 import re
 from subprocess import Popen, PIPE
 from stawebg.config import Config
-from stawebg.helper import (listFolders, findFiles, copyFile, mkdir, fail,
+from stawebg.helper import (listFolders, findFiles, findDirs, copyFile, mkdir, fail,
                             cleverCapitalize)
 
 version="0.1"
@@ -97,9 +97,9 @@ class Layout:
             self._other_files.append(OtherFile(self._dir,
                                                os.path.relpath(f, self._dir)))
 
-    def copy(self, dest):
+    def copy(self, dest, site):
         for f in self._other_files:
-            f.copy(os.path.join(dest, self.getSubdir()))
+            f.copy(site, os.path.join(dest, self.getSubdir()))
 
     def getSubdir(self):
         return os.path.join("style", self._name)
@@ -116,6 +116,7 @@ class Site:
         self._other_files = []
         self._config = self._project._config
         self._layouts = []
+        self._file_index = []
         print("Found site: " + self._name)
 
     def getConfig(self, key, fail=True):
@@ -132,7 +133,8 @@ class Site:
 
     def addLayout(self, name):
         layout = self._project.getLayout(name)
-        self._layouts.append(layout)
+        if layout not in self._layouts:
+            self._layouts.append(layout)
 
     def getSiteTitle(self):
         tmp = self.getConfig(["title"], False)
@@ -150,6 +152,7 @@ class Site:
 
     def read(self):
         self._readConfig()
+        self._createFileIndex()
         self._readHelper(self.getAbsSrcPath(), self._root)
 
     def copy(self):
@@ -160,11 +163,14 @@ class Site:
 
         # Layouts
         for l in self._layouts:
-            l.copy(self.getAbsDestPath())
+            l.copy(self.getAbsDestPath(), self)
 
         # Other files
         for f in self._other_files:
-            f.copy()
+            f.copy(self)
+
+        # Cleanup
+        self._cleanupOutput()
 
     def _readConfig(self):
         filename = os.path.join(self.getConfig(["dirs", "sites"]), self._name + ".json")
@@ -259,6 +265,35 @@ class Site:
     def createMenu(self, cur_page):
         return self._root.createMenu(cur_page)
 
+    def _createFileIndex(self):
+        path = self.getAbsDestPath()
+        if os.path.isdir(path):
+            self._file_index = findFiles(path)
+
+    def delFromFileIndex(self, path):
+        if path in self._file_index:
+            self._file_index.remove(path)
+
+    def _rmFileIndex(self):
+        for f in self._file_index:
+            print("\tRemove old file: " + f)
+            try:
+                os.remove(f)
+            except OSError as e:
+                print("\tError: " + str(e))
+
+    def _cleanupOutput(self):
+        self._rmFileIndex()
+
+        # Delete empty directories
+        for d in findDirs(self.getAbsDestPath()):
+            if not os.listdir(d):
+                print("\tRemove empty directory: " + d)
+                try:
+                    os.rmdir(d)
+                except OSError as e:
+                    print("\tError: " + str(e))
+
 
 class Page:
     def __init__(self, name, absPath, site, parent, hidden, config):
@@ -269,6 +304,8 @@ class Page:
         self._parent = parent
         self._subpages = []
         self._config = config
+
+        self._site.delFromFileIndex(self._getDestFile())
 
     def appendPage(self, p):
         self._subpages.append(p)
@@ -456,7 +493,7 @@ class OtherFile:
         self._src_path_rel = src_path_rel
         self._dest_dir = dest_dir
 
-    def copy(self, to=None):
+    def copy(self, site, to=None):
         if not to:
             to = self._dest_dir
 
@@ -464,5 +501,7 @@ class OtherFile:
         out_file = os.path.join(to, self._src_path_rel)
         out_dir = os.path.dirname(out_file)
         mkdir(out_dir)
+
+        site.delFromFileIndex(out_file)
 
         copyFile(os.path.join(self._src_path_root, self._src_path_rel), out_dir)

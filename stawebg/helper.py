@@ -43,6 +43,19 @@ def findFiles(path, exclude_ext=[]):
 
     return result
 
+def findDirs(path):
+    dirs = listFolders(path)
+
+    result = []
+
+    for d in dirs:
+        tmp = os.path.join(path, d)
+        result.append(tmp)
+        result.extend(findDirs(tmp))
+
+    return result
+
+
 
 def copyFile(src, dir):
     dest = os.path.join(dir, os.path.basename(src))
