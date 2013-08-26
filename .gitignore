@@ -1,5 +1,7 @@
 *.py[cod]
 *~
-out
+/data/out
+/data/test
+/data/sites/test*
 
 *.swp
