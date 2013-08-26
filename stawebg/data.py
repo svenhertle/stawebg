@@ -25,6 +25,7 @@ class Project:
         self._root_dir = project_dir
         self._test = test
 
+        markup_struct = (list, str, True)
         config_struct = {"dirs":
                 (dict, {"sites": (str, None, False),
                     "layouts": (str, None, False),
@@ -34,15 +35,13 @@ class Project:
                     "content": (list, str, True),
                     "hidden": (list, str, True),
                     "exclude": (list, str, True)}, True),
-                "markup": ("mapping", (str, str, "+"), True)}
+                "markup": ("mapping", (str, markup_struct, True), True)}
         self._config = Config(os.path.join(self._root_dir, "stawebg.json"), config_struct)
 
         # Make directories absolute
         dirs = self._config.get(["dirs"])
         for k in dirs:
             dirs[k] = os.path.join(self._root_dir, dirs[k])
-
-        print(self.getConfig(["dirs", "sites"]))
 
     def read(self):
         self._readLayouts()
@@ -198,6 +197,7 @@ class Site:
     def _readHelper(self, dir_path, parent, dir_hidden=False, page_config=None):
         if page_config:
             page_config.delete(["files", "sort"], False)
+            page_config.delete(["files", "rename"], False)
         else:
             page_config = self._config
 
@@ -207,7 +207,8 @@ class Site:
             config_struct = {"layout": (str, None, True),
                 "files": (dict, {"sort": (list, str, True),
                     "exclude": (list, str, True),
-                    "hidden": (list, str, True)}, True)}
+                    "hidden": (list, str, True),
+                    "rename": ("mapping", (str, str), True)}, True)}
             tmp_config = Config(os.path.join(dir_path, "stawebg.json"), config_struct)
             page_config = Config.merge(page_config, tmp_config, False)
 
@@ -220,7 +221,8 @@ class Site:
             absf = os.path.join(dir_path, f)
             if isFile(absf) and isCont(absf, self) and isIndex(absf, self):
                 idx = Page(os.path.split(dir_path)[1], absf,
-                        self, parent, dir_hidden or isHidden(absf, self, page_config), page_config)
+                        self, parent, dir_hidden or isHidden(absf, self, page_config),
+                        page_config)
                 entries.remove(f)
                 break
         # …or create an empty page as index
@@ -249,7 +251,7 @@ class Site:
             absf = os.path.join(dir_path, f)
             hidden = dir_hidden or isHidden(absf, self, page_config)
 
-            # HTML or Markdown File -> Page
+            # Content file -> Page
             if isFile(absf) and isCont(absf, self):
                 print("\tFound page: " + absf)
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
@@ -393,7 +395,7 @@ class Page:
             parent = parent.getParent()
 
         if not self.isRoot():
-            tmp_path = os.path.join(tmp_path, self._name)
+            tmp_path = os.path.join(tmp_path, self.getName())
 
         return os.path.join(self._site.getAbsDestPath(), tmp_path,
                             "index.html")
@@ -436,8 +438,15 @@ class Page:
         return tmp
 
     def getShortTitle(self):
+        if self._absSrc:
+            rename = self._config.get(["files", "rename", os.path.basename(self._absSrc)], False)
+        else:
+            rename = None
+
         if not self.getParent():
             return "Home"
+        elif rename:
+            return rename
         else:
             return cleverCapitalize(self.getName())
 

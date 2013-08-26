@@ -1,3 +1,9 @@
 {
-    "layout":"inverted"
+    "layout":"inverted",
+    "files":
+    {
+        "rename": {
+            "index.md": "Inverted layout"
+        }
+    }
 }

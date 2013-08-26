@@ -56,6 +56,9 @@ class Config:
         if not struct:
             return obj
 
+        if type(obj) != dict:
+            fail(str(obj) + " should be a dictionary in file " + self._displayname)
+
         result = {}
         for k in struct:
             if not obj.get(k) is None:
@@ -108,15 +111,21 @@ class Config:
         if type(mapping) != dict:
             fail(name + " must be a dictionary")
         # View all entries
+        # Mapping: type1 -> type2
+        # type1 must be primitive
         for i in mapping:
             # Check type1
             if type(i) == typeof[0]:
                 # Check type2
-                if typeof[2] == "1" and type(mapping[i]) != typeof[1]:
-                    pass
-                elif typeof[2] == "+":
-                    self._checkList(mapping[i], typeof[1], mapping[i])
-                else:
+                # type2 is tupel -> complex datatype
+                if type(typeof[1]) == tuple and len(typeof[1]) == 3:
+                    if typeof[1][0] == dict:
+                        mapping[i] = self._checkDict(mapping[i], typeof[1][1])
+                    elif typeof[1][0] == list:
+                        self._checkList(mapping[i], typeof[1][1], mapping[i])
+                    else:
+                        fail("config.py, _checkMapping: type not supported")
+                elif type(mapping[i]) != typeof[1]:
                     fail(str(mapping[i]) + " has the wrong type in file " + self._displayname)
             else:
                 fail(name + " has the wrong type in file " + self._displayname)
