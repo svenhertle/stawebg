@@ -1,1 +1,5 @@
 * Blog feature (e.g. for news)
+    * Add templates (entry and between two entries)
+    * Create HTML code
+    * Entries per page -> more pages
+    * RSS
