@@ -9,7 +9,7 @@ from stawebg.config import Config
 from stawebg.helper import (listFolders, findFiles, findDirs, fail, matchList,
                             cleverCapitalize)
 
-version = "0.1"
+version = "0.1-dev"
 
 isFile = lambda f: os.path.isfile(f)
 matchPath = lambda f, c: os.path.abspath(f)[len(os.path.abspath(c.getAbsSrcPath()))+1:]
@@ -183,10 +183,12 @@ class Site:
                                             os.path.basename(dir_path)], False)
             page_config.delete(["files", "sort"], False)
             page_config.delete(["files", "rename"], False)
+            page_config.delete(["blog"], False)
         else:
             page_config = self._config
 
         entries = sorted(os.listdir(dir_path))
+        blog = None
 
         if "stawebg.json" in entries:
             tmp_config = Config(os.path.join(dir_path, "stawebg.json"),
@@ -198,6 +200,10 @@ class Site:
         if layout not in self._layouts:
             self._layouts.append(layout)
 
+        # Create blog, if there is config for it
+        if page_config.get(["blog"], False):
+            blog = Blog(dir_path, page_config, self)
+
         # First we have to find the index file in this directory…
         idx = None
         for f in entries:
@@ -207,7 +213,7 @@ class Site:
                     page_config.add(["files", "rename", f], index_rename)
                 idx = Page(os.path.split(dir_path)[1], absf, self, parent,
                            dir_hidden or isHidden(absf, self, page_config),
-                           page_config)
+                           blog, page_config)
                 entries.remove(f)
                 break
         # …or create an empty page as index
@@ -216,7 +222,7 @@ class Site:
             if index_rename:
                 page_config.add(["files", "rename", None], index_rename)
             idx = Page(dirname, None, self, parent, dir_hidden or
-                       isHidden(dirname, self, page_config), page_config)
+                       isHidden(dirname, self, page_config), blog, page_config)
 
         if parent:
             parent.appendPage(idx)
@@ -240,11 +246,14 @@ class Site:
                 continue
             hidden = dir_hidden or isHidden(absf, self, page_config)
 
+            # Is data dir of blog
+            if blog and os.path.samefile(absf, blog.getAbsDir()):
+                continue
             # Content file -> Page
-            if isFile(absf) and isCont(absf, self):
+            elif isFile(absf) and isCont(absf, self):
                 print("\tFound page: " + absf)
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
-                                    hidden, page_config))
+                                    hidden, blog, page_config))
             # Directory -> Go inside
             elif os.path.isdir(absf):
                 print("\tFound dir:  " + absf)
@@ -266,13 +275,14 @@ class Site:
 
 
 class Page:
-    def __init__(self, name, absPath, site, parent, hidden, config):
+    def __init__(self, name, absPath, site, parent, hidden, blog, config):
         self._name = name
         self._absSrc = absPath
         self._site = site
         self._hidden = hidden
         self._parent = parent
         self._subpages = []
+        self._blog = blog
         self._config = config
 
         self._site.delFromFileIndex(self._getDestFile())
@@ -346,6 +356,8 @@ class Page:
                 "%SITETITLE%": self._site.getSiteTitle(),
                 "%SITESUBTITLE%": self._site.getSiteSubtitle(),
                 "%MENU%": self._site.createMenu(self)}
+        if self._blog:
+            reps["%BLOG%"] = self._blog.getHTML()
         trans = lambda m: reps[m.group(0)]
         rc = re.compile('|'.join(map(re.escape, reps)))
         return rc.sub(trans, text.replace("%CONTENT%", self._translateMarkup()))
@@ -486,3 +498,28 @@ class OtherFile:
         site.delFromFileIndex(out_file)
         shutil.copy(os.path.join(self._src_path_root, self._src_path_rel),
                     os.path.join(out_dir, os.path.basename(self._src_path_rel)))
+
+class Blog:
+    def __init__(self, dir, config, site):
+        self._dir = dir
+        self._config = config
+        self._site = site
+        self._entries = []
+
+        self._read()
+
+    def getDir(self):
+        return self._config.get(["blog", "dir"])
+
+    def getAbsDir(self):
+        return os.path.join(self._dir, self.getDir())
+
+    def getHTML(self):
+        # TODO
+        return ""
+
+    def _read(self):
+        for f in findFiles(self.getAbsDir()):
+            if isCont(f, self._site):
+                print("\tFound blog entry: " + f)
+                self._entries.append(f)

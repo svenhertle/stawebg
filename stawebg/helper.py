@@ -26,7 +26,10 @@ def listFolders(path):
 
 def findFiles(path, exclude_ext=[]):
     # Get absolute names of all files
-    files = os.listdir(path)
+    try:
+        files = os.listdir(path)
+    except OSError as e:
+        fail("Can't open directory: " + str(e))
 
     result = []
 

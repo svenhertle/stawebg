@@ -35,7 +35,8 @@ class Config:
                                          "rename": ("mapping",
                                                     (str, str),
                                                     True)},
-                                  True)}
+                                  True),
+                        "blog": (dict, {"dir": (str, None, False)}, True)}
 
     def __init__(self, filename, struct, displayname=None):
         self._config = {}

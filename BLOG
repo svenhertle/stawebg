@@ -1,0 +1,51 @@
+Requirements
+============
+
+* Number of entries per page
+* Direct link to one entry
+* Insert into page with %BLOG%
+* Template for entry: %CONTENT% and some ones for different parts of the Date
+and Time
+* Template for things between two entries
+* RSS
+
+stawebg.json
+============
+
+blog =
+{
+    "dir":"data",
+    "per-page":10
+}
+
+dir
+---
+
+* directory with data files (entries)
+* empty -> directory of stawebg.json
+
+per-page
+--------
+
+* Number of entries per page
+* 0 -> unlimited (one page with all entries)
+
+Filenames
+=========
+
+YEAR-MONTH-DAY-HOUR-MINUTE-title.md
+
+title is only used for URL (=filename without extension)
+
+date is used for %DATE%
+
+Content
+=======
+
+Normal HTML or any specified markup language
+
+TODO
+====
+
+* Variables for page navigation (next page, list of pages, ...)
+* how to not recurse into data-dir?
