@@ -555,7 +555,7 @@ class Blog:
 
     def getHTML(self):
         tmp = ""
-        for n, i in enumerate(sorted(self._entries)):
+        for n, i in enumerate(sorted(self._entries, reverse=True)):
             reps = {"%DATE%": i.strftime(self._config.get(["timeformat"]))}
 
             tmp += self.getLayout().useBlogEntry(self._entries[i][1], reps)
