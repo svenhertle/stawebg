@@ -5,9 +5,10 @@ import os
 import re
 import shutil
 from subprocess import Popen, PIPE
+from datetime import datetime
 from stawebg.config import Config
 from stawebg.helper import (listFolders, findFiles, findDirs, fail, matchList,
-                            cleverCapitalize)
+                            mkdir, cleverCapitalize)
 
 version = "0.1-dev"
 
@@ -76,12 +77,31 @@ class Layout:
         self._name = name
         self._dir = os.path.join(self._project.getConfig(['dirs', 'layouts']),
                                  name)
-        self._template = os.path.join(self._dir, 'template.html')
+        self._template_file = os.path.join(self._dir, 'template.html')
+        self._blogentry_file = os.path.join(self._dir, 'blogentry.html')
+        self._blogseparator_file = os.path.join(self._dir, 'blogseparator.html')
+        self._template = ""
+        self._blogentry = ""
+        self._blogseparator = ""
         self._other_files = []
 
         print("Found layout: " + self._name)
 
     def read(self):
+        # Check if template files exist
+        if not isFile(self._template_file):
+            fail("Error in template \"" + self._name + "\": template.html does not exist")
+        if not isFile(self._blogentry_file):
+            fail("Error in template \"" + self._name + "\": blogentry.html does not exist")
+        if not isFile(self._blogseparator_file):
+            fail("Error in template \"" + self._name + "\": blogseparator.html does not exist")
+
+        # Read template files
+        self._template = self._readFile(self._template_file)
+        self._blogentry = self._readFile(self._blogentry_file)
+        self._blogseparator = self._readFile(self._blogseparator_file)
+
+        # Search other files (CSS, images, ...)
         for f in findFiles(self._dir, [".html"]):
             print("\tFound file: " + f)
             self._other_files.append(OtherFile(self._dir,
@@ -94,8 +114,63 @@ class Layout:
     def getSubdir(self):
         return os.path.join("style", self._name)
 
-    def getTemplate(self):
-        return self._template
+    def useTemplate(self, dest, src, reps):
+        text = self._template[:]
+        text = text.replace("%CONTENT%", self._translateMarkup(src))
+        return self._createOutput(dest, text, reps)
+
+    def useBlogEntry(self, src, reps):
+        text = self._blogentry[:]
+        text = text.replace("%CONTENT%", self._translateMarkup(src))
+        return self._replaceKeywords(text, reps)
+
+    def useBlogSeparator(self):
+        return self._blogseparator[:]
+
+    def _readFile(self, src):
+        try:
+            return open(src).read()
+        except IOError as e:
+            fail("Error reading \"" + src + "\": " + str(e))
+
+    def _createOutput(self, dest, text, reps):
+        mkdir(os.path.dirname(dest))
+
+        try:
+            outf = open(dest, 'w')
+            outf.write(self._replaceKeywords(text, reps))
+            outf.close()
+        except IOError as e: #TODO: check exceptions
+            fail("Error creating " + dest + ": " + str(e))
+
+    def _translateMarkup(self, src_file):
+        text = ''
+
+        if not src_file:
+            return text
+
+        with open(src_file, "rt") as src:
+            text = src.read()
+
+        config = self._project.getConfig(["markup"], False)
+        if not config:
+            return text
+        tool = config.get(os.path.splitext(src_file)[1])
+
+        if tool:
+            out, err = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE).communicate(text.encode())
+            if len(err):
+                fail(' '.join(tool) + ": " + err.decode())
+            return out.decode()
+        return text
+
+    def _replaceKeywords(self, text, reps):
+        if not reps:
+            return text
+
+        trans = lambda m: reps[m.group(0)]
+        rc = re.compile('|'.join(map(re.escape, reps)))
+        return rc.sub(trans, text)
 
 
 class Site:
@@ -307,48 +382,6 @@ class Page:
         return self._site.getProject().getLayout(layout)
 
     def copy(self):
-        # Use 'codecs' package to support UTF-8?
-        try:
-            os.makedirs(os.path.dirname(self._getDestFile()))
-            outf = open(self._getDestFile(), 'w')
-            tplf = open(self.getLayout().getTemplate())
-            outf.write(self._replaceKeywords(tplf.read()))
-            tplf.close()
-            outf.close()
-        # TODO: check for other possible exceptions
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                fail(str(e))
-        except IOError as e:
-            fail("Error creating " + self._getDestFile() + ": " + str(e))
-
-        # Copy subpages
-        for p in self._subpages:
-            p.copy()
-
-    def _translateMarkup(self):
-        text = ''
-
-        if not self._absSrc:
-            return text
-
-        with open(self._absSrc, "rt") as src:
-            text = src.read()
-
-        config = self._site.getConfig(["markup"], False)
-        if not config:
-            return text
-        tool = config.get(os.path.splitext(self._absSrc)[1])
-
-        if tool:
-            pipe = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-            out, err = pipe.communicate(text.encode())
-            if len(err):
-                fail(' '.join(tool) + ": " + err.decode())
-            return out.decode()
-        return text
-
-    def _replaceKeywords(self, text):
         reps = {"%ROOT%": self.getRootLink(),
                 "%CUR%": self.getCurrentLink(),
                 "%LAYOUT%": self.getLayoutDir(),
@@ -358,9 +391,12 @@ class Page:
                 "%MENU%": self._site.createMenu(self)}
         if self._blog:
             reps["%BLOG%"] = self._blog.getHTML()
-        trans = lambda m: reps[m.group(0)]
-        rc = re.compile('|'.join(map(re.escape, reps)))
-        return rc.sub(trans, text.replace("%CONTENT%", self._translateMarkup()))
+
+        self.getLayout().useTemplate(self._getDestFile(), self._absSrc, reps)
+
+        # Copy subpages
+        for p in self._subpages:
+            p.copy()
 
     def _getDestFile(self):
         tmp_path = ""
@@ -489,11 +525,7 @@ class OtherFile:
 
         out_file = os.path.join(to, self._src_path_rel)
         out_dir = os.path.dirname(out_file)
-        try:
-            os.makedirs(out_dir)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                fail(str(e))
+        mkdir(out_dir)
 
         site.delFromFileIndex(out_file)
         shutil.copy(os.path.join(self._src_path_root, self._src_path_rel),
@@ -504,7 +536,10 @@ class Blog:
         self._dir = dir
         self._config = config
         self._site = site
-        self._entries = []
+
+        # Key: datetime object
+        # Value: (title, filename)
+        self._entries = {}
 
         self._read()
 
@@ -514,12 +549,40 @@ class Blog:
     def getAbsDir(self):
         return os.path.join(self._dir, self.getDir())
 
+    def getLayout(self): #NOTE: Copy from Page…
+        layout = self._config.get(["layout"], False)
+        return self._site.getProject().getLayout(layout)
+
     def getHTML(self):
-        # TODO
-        return ""
+        tmp = ""
+
+        for n, i in enumerate(sorted(self._entries)):
+            tmp += self.getLayout().useBlogEntry(self._entries[i][1], None)
+            if n != len(self._entries)-1:
+                tmp += self.getLayout().useBlogSeparator()
+
+        return tmp
+
+    def getMeta(self, path):
+        filename = os.path.basename(os.path.splitext(path)[0])
+        data = re.match(r"([0-9]{4})-([0-9]{2})-([0-9]{2})-([0-9]{2})-([0-9]{2})-(.+)", filename)
+
+        if not data:
+            return None
+
+        # TODO: check range of values
+        time = datetime(int(data.group(1)), int(data.group(2)), int(data.group(3)), int(data.group(4)), int(data.group(5)))
+        title = data.group(6)
+        return (time, title)
 
     def _read(self):
         for f in findFiles(self.getAbsDir()):
             if isCont(f, self._site):
-                print("\tFound blog entry: " + f)
-                self._entries.append(f)
+                meta = self.getMeta(f)
+                if meta:
+                    print("\tFound blog entry: " + f)
+                    self._entries[meta[0]] = (meta[1], f)
+                else:
+                    print("\tWarning: content file with invalid filename for blog: " + f)
+            else:
+                pass # TODO: OtherFile

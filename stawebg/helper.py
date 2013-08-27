@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 
+import errno
 import os
-import sys
 import re
+import sys
 
 #
 # File IO
@@ -57,6 +58,14 @@ def findDirs(path):
         result.extend(findDirs(tmp))
 
     return result
+
+
+def mkdir(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            fail(str(e))
 
 
 #
