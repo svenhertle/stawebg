@@ -13,5 +13,6 @@
     },
     "markup": {
         ".md": ["markdown"]
-    }
+    },
+    "timeformat": "%d/%m/%Y %H:%M"
 }

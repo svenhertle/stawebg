@@ -555,34 +555,35 @@ class Blog:
 
     def getHTML(self):
         tmp = ""
-
         for n, i in enumerate(sorted(self._entries)):
-            tmp += self.getLayout().useBlogEntry(self._entries[i][1], None)
+            reps = {"%DATE%": i.strftime(self._config.get(["timeformat"]))}
+
+            tmp += self.getLayout().useBlogEntry(self._entries[i][1], reps)
             if n != len(self._entries)-1:
                 tmp += self.getLayout().useBlogSeparator()
 
         return tmp
 
-    def getMeta(self, path):
-        filename = os.path.basename(os.path.splitext(path)[0])
-        data = re.match(r"([0-9]{4})-([0-9]{2})-([0-9]{2})-([0-9]{2})-([0-9]{2})-(.+)", filename)
-
-        if not data:
-            return None
-
-        # TODO: check range of values
-        time = datetime(int(data.group(1)), int(data.group(2)), int(data.group(3)), int(data.group(4)), int(data.group(5)))
-        title = data.group(6)
-        return (time, title)
-
     def _read(self):
         for f in findFiles(self.getAbsDir()):
             if isCont(f, self._site):
-                meta = self.getMeta(f)
+                meta = self._getMeta(f)
                 if meta:
                     print("\tFound blog entry: " + f)
                     self._entries[meta[0]] = (meta[1], f)
                 else:
                     print("\tWarning: content file with invalid filename for blog: " + f)
             else:
-                pass # TODO: OtherFile
+                pass # FIXME: OtherFile
+
+    def _getMeta(self, path):
+        filename = os.path.basename(os.path.splitext(path)[0])
+        data = re.match(r"([0-9]{4})-([0-9]{2})-([0-9]{2})-([0-9]{2})-([0-9]{2})-(.+)", filename)
+
+        if not data:
+            return None
+
+        # FIXME: check range of values
+        time = datetime(int(data.group(1)), int(data.group(2)), int(data.group(3)), int(data.group(4)), int(data.group(5)))
+        title = data.group(6)
+        return (time, title)

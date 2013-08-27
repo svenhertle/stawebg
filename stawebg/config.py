@@ -18,7 +18,8 @@ class Config:
                      "markup": ("mapping", (str,
                                             (list, str, True),
                                             True),
-                                True)}
+                                True),
+                     "timeformat": (str, None, False)}
     site_struct = {"dirs": (None, None, None),
                    "markup": (None, None, None),
                    "title": (str, None, True),
