@@ -77,29 +77,24 @@ class Layout:
         self._name = name
         self._dir = os.path.join(self._project.getConfig(['dirs', 'layouts']),
                                  name)
-        self._template_file = os.path.join(self._dir, 'template.html')
-        self._blogentry_file = os.path.join(self._dir, 'blogentry.html')
-        self._blogseparator_file = os.path.join(self._dir, 'blogseparator.html')
-        self._template = ""
-        self._blogentry = ""
-        self._blogseparator = ""
         self._other_files = []
+
+        self._files = {}
+        self._files["template"] = os.path.join(self._dir, 'template.html')
+        self._files["entry"] = os.path.join(self._dir, 'blog', 'entry.html')
+        self._files["separator"] = os.path.join(self._dir, 'blog', 'separator.html')
+        self._files["singleentry"] = os.path.join(self._dir, 'blog', 'singleentry.html')
+
+        self._templates = {}
 
         print("Found layout: " + self._name)
 
     def read(self):
-        # Check if template files exist
-        if not isFile(self._template_file):
-            fail("Error in template \"" + self._name + "\": template.html does not exist")
-        if not isFile(self._blogentry_file):
-            fail("Error in template \"" + self._name + "\": blogentry.html does not exist")
-        if not isFile(self._blogseparator_file):
-            fail("Error in template \"" + self._name + "\": blogseparator.html does not exist")
-
-        # Read template files
-        self._template = self._readFile(self._template_file)
-        self._blogentry = self._readFile(self._blogentry_file)
-        self._blogseparator = self._readFile(self._blogseparator_file)
+        # Check if template files exist and read them
+        for i in self._files:
+            if not isFile(self._files[i]):
+                fail("Error in template \"" + self._name + "\":" + self._files[i] + " does not exist")
+            self._templates[i] = self._readFile(self._files[i])
 
         # Search other files (CSS, images, ...)
         for f in findFiles(self._dir, [".html"]):
@@ -114,18 +109,23 @@ class Layout:
     def getSubdir(self):
         return os.path.join("style", self._name)
 
-    def useTemplate(self, dest, src, reps):
-        text = self._template[:]
-        text = text.replace("%CONTENT%", self._translateMarkup(src))
-        return self._createOutput(dest, text, reps)
+    def useTemplate(self, dest, src, reps, ext=None):
+        text = self._templates["template"][:]
+        text = text.replace("%CONTENT%", self._translateMarkup(src, ext))
+        self._createOutput(dest, text, reps)
 
     def useBlogEntry(self, src, reps):
-        text = self._blogentry[:]
+        text = self._templates["entry"][:]
         text = text.replace("%CONTENT%", self._translateMarkup(src))
         return self._replaceKeywords(text, reps)
 
     def useBlogSeparator(self):
-        return self._blogseparator[:]
+        return self._templates["separator"][:]
+
+    def useBlogSingleEntry(self, src, reps):
+        text = self._templates["singleentry"][:]
+        text = text.replace("%CONTENT%", self._translateMarkup(src))
+        return self._replaceKeywords(text, reps)
 
     def _readFile(self, src):
         try:
@@ -143,19 +143,27 @@ class Layout:
         except IOError as e: #TODO: check exceptions
             fail("Error creating " + dest + ": " + str(e))
 
-    def _translateMarkup(self, src_file):
+    def _translateMarkup(self, src, ext=None):
         text = ''
 
-        if not src_file:
-            return text
+        # src is string -> file extension given
+        if ext:
+            text = src
+        # src if filename
+        else:
+            if not src:
+                return text
 
-        with open(src_file, "rt") as src:
-            text = src.read()
+            with open(src, "rt") as f:
+                text = f.read()
+
+            ext = os.path.splitext(src)[1]
 
         config = self._project.getConfig(["markup"], False)
         if not config:
             return text
-        tool = config.get(os.path.splitext(src_file)[1])
+
+        tool = config.get(ext)
 
         if tool:
             out, err = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE).communicate(text.encode())
@@ -350,7 +358,7 @@ class Site:
 
 
 class Page:
-    def __init__(self, name, absPath, site, parent, hidden, blog, config):
+    def __init__(self, name, absPath, site, parent, hidden, blog, config, content=None):
         self._name = name
         self._absSrc = absPath
         self._site = site
@@ -359,8 +367,12 @@ class Page:
         self._subpages = []
         self._blog = blog
         self._config = config
+        self._content = content
 
         self._site.delFromFileIndex(self._getDestFile())
+
+        if self._blog and isIndex(self._absSrc, self._site):
+            self._blog.setIndexPage(self)
 
     def appendPage(self, p):
         self._subpages.append(p)
@@ -390,13 +402,21 @@ class Page:
                 "%SITESUBTITLE%": self._site.getSiteSubtitle(),
                 "%MENU%": self._site.createMenu(self)}
         if self._blog:
-            reps["%BLOG%"] = self._blog.getHTML()
+            reps["%BLOG%"] = self._blog.getHTML(self)
 
-        self.getLayout().useTemplate(self._getDestFile(), self._absSrc, reps)
+        # regular file
+        if not self._content:
+            self.getLayout().useTemplate(self._getDestFile(), self._absSrc, reps)
+        else:
+            self.getLayout().useTemplate(self._getDestFile(), self._content[0], reps, self._content[1])
 
         # Copy subpages
         for p in self._subpages:
             p.copy()
+
+        # Copy blog
+        if self._blog and isIndex(self._absSrc, self._site):
+            self._blog.copy()
 
     def _getDestFile(self):
         tmp_path = ""
@@ -536,12 +556,16 @@ class Blog:
         self._dir = dir
         self._config = config
         self._site = site
+        self._index_page = None
 
         # Key: datetime object
         # Value: (title, filename)
         self._entries = {}
 
         self._read()
+
+    def setIndexPage(self, index):
+        self._index_page = index
 
     def getDir(self):
         return self._config.get(["blog", "dir"])
@@ -553,20 +577,25 @@ class Blog:
         layout = self._config.get(["layout"], False)
         return self._site.getProject().getLayout(layout)
 
-    def getHTML(self):
+    def getHTML(self, origin):
         tmp = ""
         for n, i in enumerate(sorted(self._entries, reverse=True)):
-            reps = {"%DATE%": i.strftime(self._config.get(["timeformat"]))}
-
-            tmp += self.getLayout().useBlogEntry(self._entries[i][1], reps)
+            tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getReps(i, origin))
             if n != len(self._entries)-1:
                 tmp += self.getLayout().useBlogSeparator()
 
         return tmp
 
+    def copy(self):
+        for i in sorted(self._entries, reverse=True):
+            content = self.getLayout().useBlogSingleEntry(self._entries[i][1], self._getReps(i, self._index_page))
+            page = Page(self._getTitle(i), None, self._site, self._index_page, True, None, self._config, (content, "md"))
+            page.copy()
+
     def _read(self):
         for f in findFiles(self.getAbsDir()):
             if isCont(f, self._site):
+                # meta = (time, title)
                 meta = self._getMeta(f)
                 if meta:
                     print("\tFound blog entry: " + f)
@@ -587,3 +616,13 @@ class Blog:
         time = datetime(int(data.group(1)), int(data.group(2)), int(data.group(3)), int(data.group(4)), int(data.group(5)))
         title = data.group(6)
         return (time, title)
+
+    def _getTitle(self, key):
+        return os.path.splitext(os.path.basename(self._entries[key][1]))[0]
+
+    def _getReps(self, key, origin):
+        return {"%DATE%": key.strftime(self._config.get(["timeformat"])),
+                "%LINK%": self._getLinkTo(key, origin)}
+
+    def _getLinkTo(self, key, origin):
+        return self._index_page.getLink(origin) + self._getTitle(key)
