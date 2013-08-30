@@ -15,11 +15,12 @@ class Config:
                                       "content": (list, str, True),
                                       "hidden": (list, str, True),
                                       "exclude": (list, str, True)}, True),
-                     "markup": ("mapping", (str,
-                                            (list, str, True),
-                                            True),
+                     "markup": ("mapping",
+                                (str, (list, str, True), True),
                                 True),
-                     "timeformat": (str, None, False)}
+                     "locale" : (str, None, False),
+                     "timeformat" : (str, None, False),
+                     "timezone" : (str, None, False)}
     site_struct = {"dirs": (None, None, None),
                    "markup": (None, None, None),
                    "title": (str, None, True),
@@ -28,16 +29,30 @@ class Config:
                    "files": (dict, {"index": (list, str, True),
                                     "content": (list, str, True),
                                     "hidden": (list, str, True),
-                                    "exclude": (list, str, True)}, True)}
+                                    "exclude": (list, str, True)}, True),
+                   "locale" : (str, None, True),
+                   "timeformat" : (str, None, True),
+                   "timezone" : (str, None, True),
+                   "url": (str, None, True)}
     directory_struct = {"layout": (str, None, True),
-                        "files": (dict, {"sort": (list, str, True),
-                                         "exclude": (list, str, True),
-                                         "hidden": (list, str, True),
-                                         "rename": ("mapping",
-                                                    (str, str),
-                                                    True)},
+                        "files": (dict,
+                                  {"sort": (list, str, True),
+                                   "exclude": (list, str, True),
+                                   "hidden": (list, str, True),
+                                   "rename": ("mapping", (str, str), True)},
                                   True),
-                        "blog": (dict, {"dir": (str, None, False)}, True)}
+                        "blog": (dict,
+                                 {"dir": (str, None, False),
+                                  "rss": (dict,
+                                          {"file": (str, None, False),
+                                           "title": (str, None, False),
+                                           "description": (str, None, False),
+                                           "copyright": (str, None, True),
+                                           "show_generator": (bool, None, True),
+                                           "title_length": (int, None, True),
+                                           "content_length": (int, None, True)},
+                                          True)},
+                                 True)}
 
     def __init__(self, filename, struct, displayname=None):
         self._config = {}

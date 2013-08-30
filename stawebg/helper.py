@@ -76,11 +76,13 @@ def mkdir(path):
 def cleverCapitalize(text):
     if len(text) == 0:
         return ""
-    elif len(text) == 1:
-        return text.upper()
     else:
         return text[0].upper() + text[1:]
 
+def cutStr(text, length):
+    if length == 0 or len(text) <= length:
+        return text
+    return text[0:length-4] + "..."
 
 def matchList(string, regex_lst):
     for r in regex_lst:

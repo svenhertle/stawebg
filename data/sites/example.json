@@ -1,5 +1,6 @@
 {
     "title":"stawebg",
     "subtitle":"example site",
-    "layout":"default"
+    "layout":"default",
+    "url": "http://www.example.org"
 }

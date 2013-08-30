@@ -5,10 +5,12 @@ import os
 import re
 import shutil
 from subprocess import Popen, PIPE
+import locale
+import cgi
 from datetime import datetime
 from stawebg.config import Config
 from stawebg.helper import (listFolders, findFiles, findDirs, fail, matchList,
-                            mkdir, cleverCapitalize)
+                            cleverCapitalize, cutStr, mkdir)
 
 version = "0.1-dev"
 
@@ -34,6 +36,9 @@ class Project:
         dirs = self._config.get(["dirs"])
         for k in dirs:
             dirs[k] = os.path.join(self._root_dir, dirs[k])
+
+        # Set locale
+        locale.setlocale(locale.LC_ALL, self.getConfig(["locale"], False, ""))
 
         # Add all layouts to list
         for name in listFolders(self.getConfig(['dirs', 'layouts'])):
@@ -127,6 +132,9 @@ class Layout:
         text = text.replace("%CONTENT%", self._translateMarkup(src))
         return self._replaceKeywords(text, reps)
 
+    def useBlogRSSEntry(self, src, reps):
+        return self._replaceKeywords(self._removeHTML(self._translateMarkup(src)), reps)
+
     def _readFile(self, src):
         try:
             return open(src).read()
@@ -180,6 +188,9 @@ class Layout:
         rc = re.compile('|'.join(map(re.escape, reps)))
         return rc.sub(trans, text)
 
+    def _removeHTML(self, text):
+        return re.sub('<.*?>', '', text)
+
 
 class Site:
     def __init__(self, name, project):
@@ -203,6 +214,9 @@ class Site:
 
     def getProject(self):
         return self._project
+
+    def getRoot(self):
+        return self._root
 
     def getSiteTitle(self):
         return self.getConfig(["title"], default=self._name)
@@ -400,7 +414,8 @@ class Page:
                 "%TITLE%": self.getTitle(),
                 "%SITETITLE%": self._site.getSiteTitle(),
                 "%SITESUBTITLE%": self._site.getSiteSubtitle(),
-                "%MENU%": self._site.createMenu(self)}
+                "%MENU%": self._site.createMenu(self),
+                "%URL%": self._config.get(["url"], False, "")}
         if self._blog:
             reps["%BLOG%"] = self._blog.getHTML(self)
 
@@ -592,6 +607,8 @@ class Blog:
             page = Page(self._getTitle(i), None, self._site, self._index_page, True, None, self._config, (content, "md"))
             page.copy()
 
+        self._createRSS()
+
     def _read(self):
         for f in findFiles(self.getAbsDir()):
             if isCont(f, self._site):
@@ -620,9 +637,79 @@ class Blog:
     def _getTitle(self, key):
         return os.path.splitext(os.path.basename(self._entries[key][1]))[0]
 
-    def _getReps(self, key, origin):
+    def _getReps(self, key, origin, full_link=False):
         return {"%DATE%": key.strftime(self._config.get(["timeformat"])),
-                "%LINK%": self._getLinkTo(key, origin)}
+                "%LINK%": self._getLinkTo(key, origin, full_link)}
 
-    def _getLinkTo(self, key, origin):
-        return self._index_page.getLink(origin) + self._getTitle(key)
+    def _getLinkTo(self, key, origin, full=False):
+        tmp = ""
+        if full:
+            tmp = self._config.get(["url"], False, "") + "/"
+        return tmp + self._index_page.getLink(origin) + self._getTitle(key)
+
+    def _createRSS(self):
+        if not self._config.get(["blog", "rss"], False):
+            return
+
+        dest = os.path.join(self._site.getAbsDestPath(), self._config.get(["blog", "rss", "file"]))
+        with open(dest, "wt") as f:
+            TODO = ""
+
+            locale_backup = locale.getlocale(locale.LC_ALL)
+            locale.setlocale(locale.LC_ALL, "en_GB")
+
+            url = self._config.get(["url"], False)
+            if not url:
+                print("\tWarning: No URL given in configuration. Generating invalid RSS feed.")
+                url=""
+
+            f.write('<?xml version="1.0" encoding="utf-8"?>\n')
+            f.write('<rss version="2.0">\n')
+            f.write('<channel>\n')
+            f.write('<title>' + self._RSSencode(self._config.get(["blog", "rss", "title"])) + '</title>\n')
+            f.write('<link>' + self._RSSencode(url) + '</link>\n')
+            f.write('<description>' + self._RSSencode(self._config.get(["blog", "rss", "description"])) + '</description>\n')
+            copyright = self._config.get(["blog", "rss", "copyright"], False)
+            if copyright:
+                f.write('<copyright>' + self._RSSencode(copyright) + '</copyright>\n')
+            if self._config.get(["blog", "rss", "show_generator"], False, True):
+                f.write('<generator>stawebg ' + self._RSSencode(version) + '</generator>\n')
+
+            f.write('<pubDate>' + self._getRSSDate(datetime.now()) + '</pubDate>\n')
+
+            for i in sorted(self._entries, reverse=True):
+                html=self.getLayout().useBlogRSSEntry(self._entries[i][1], self._getReps(i, self._site.getRoot(), True))
+                # FIXME: remove HTML
+                f.write('<item>\n')
+                f.write('<title>' + self._RSSencode(self._getRSSTitle(html)) + '</title>\n')
+                f.write('<description>' + self._RSSencode(self._getRSSContent(html)) + '</description>\n')
+                f.write('<link>' + self._RSSencode(url + '/' + self._getLinkTo(i, self._site.getRoot())) + '</link>\n')
+                f.write('<guid>' + self._RSSencode(self._getTitle(i)) + '</guid>\n')
+                f.write('<pubDate>' + self._RSSencode(self._getRSSDate(i)) + '</pubDate>\n')
+                f.write('</item>\n')
+
+            f.write('</channel>\n')
+            f.write('</rss>\n')
+
+            locale.setlocale(locale.LC_ALL, locale_backup)
+
+        self._site.delFromFileIndex(dest)
+
+    def _RSSencode(self, text):
+        return cgi.escape(text).encode('ascii', 'xmlcharrefreplace').decode('utf-8')
+
+    def _getRSSDate(self, data):
+        return data.strftime('%d %b %Y %H:%M') + " " + self._config.get(["timezone"],False, '+0000')
+
+    def _getRSSGroups(self, text, group):
+        #FIXME: ignore empty lines at begin (and at the end)
+        match = re.match(r'(.*?)$[\n\r\t ]*(.*)', text, re.MULTILINE | re.DOTALL)
+        if match:
+            return match.group(group)
+        return ""
+
+    def _getRSSTitle(self, text):
+        return cutStr(self._getRSSGroups(text, 1), self._config.get(["blog", "rss", "title_length"], False, 0))
+
+    def _getRSSContent(self, text):
+        return cutStr(self._getRSSGroups(text, 2), self._config.get(["blog", "rss", "content_length"], False, 0))
