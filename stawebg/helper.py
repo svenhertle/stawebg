@@ -37,7 +37,7 @@ def findFiles(path, exclude_ext=[]):
         absf = os.path.join(path, f)
 
         if os.path.isdir(absf):
-            result.extend(findFiles(absf))
+            result.extend(findFiles(absf, exclude_ext))
         else:
             if not absf.endswith(tuple(exclude_ext)):
                 result.append(absf)
