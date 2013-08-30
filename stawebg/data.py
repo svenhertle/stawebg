@@ -450,10 +450,10 @@ class Page:
 
         rename = self._config.get(["files", "rename", key], False)
 
-        if not self.getParent():
-            return "Home"
-        elif rename:
+        if rename:
             return rename
+        elif not self.getParent():
+            return "Home"
         else:
             return cleverCapitalize(self.getName())
 
