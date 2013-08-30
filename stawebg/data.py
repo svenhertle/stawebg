@@ -195,7 +195,9 @@ class Site:
         self._config = Config.merge(self._config, site_config, True)
 
     def _readHelper(self, dir_path, parent, dir_hidden=False, page_config=None):
+        index_rename = None
         if page_config:
+            index_rename = page_config.get(["files", "rename", os.path.basename(dir_path)], False)
             page_config.delete(["files", "sort"], False)
             page_config.delete(["files", "rename"], False)
         else:
@@ -220,6 +222,8 @@ class Site:
         for f in entries:
             absf = os.path.join(dir_path, f)
             if isFile(absf) and isCont(absf, self) and isIndex(absf, self):
+                if index_rename:
+                    page_config.add(["files", "rename", f], index_rename)
                 idx = Page(os.path.split(dir_path)[1], absf,
                         self, parent, dir_hidden or isHidden(absf, self, page_config),
                         page_config)
@@ -228,6 +232,8 @@ class Site:
         # …or create an empty page as index
         if not idx:
             dirname = os.path.split(dir_path)[1]
+            if index_rename:
+                page_config.add(["files", "rename", None], index_rename)
             idx = Page(dirname, None, self, parent, dir_hidden or isHidden(dirname, self, page_config),
                     page_config)
 
@@ -438,10 +444,11 @@ class Page:
         return tmp
 
     def getShortTitle(self):
+        key = None
         if self._absSrc:
-            rename = self._config.get(["files", "rename", os.path.basename(self._absSrc)], False)
-        else:
-            rename = None
+            key = os.path.basename(self._absSrc)
+
+        rename = self._config.get(["files", "rename", key], False)
 
         if not self.getParent():
             return "Home"

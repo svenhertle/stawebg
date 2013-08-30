@@ -38,6 +38,18 @@ class Config:
         elif do_fail:
             fail("Can't find " + str(key))
 
+    def add(self, key, value):
+        config = self._config
+        for n, k in enumerate(key):
+            if config.get(k):
+                config = config.get(k)
+            else:
+                if n == len(key)-1:
+                    config[k] = value
+                else:
+                    config[k] = {}
+                    config = config[k]
+
     def copy(self):
         return deepcopy(self)
 
