@@ -7,6 +7,36 @@ from stawebg.helper import fail
 
 
 class Config:
+    global_struct = {"dirs": (dict, {"sites": (str, None, False),
+                                     "layouts": (str, None, False),
+                                     "out": (str, None, False),
+                                     "test": (str, None, True)}, False),
+                     "files": (dict, {"index": (list, str, True),
+                                      "content": (list, str, True),
+                                      "hidden": (list, str, True),
+                                      "exclude": (list, str, True)}, True),
+                     "markup": ("mapping", (str,
+                                            (list, str, True),
+                                            True),
+                                True)}
+    site_struct = {"dirs": (None, None, None),
+                   "markup": (None, None, None),
+                   "title": (str, None, True),
+                   "subtitle": (str, None, True),
+                   "layout": (str, None, True),
+                   "files": (dict, {"index": (list, str, True),
+                                    "content": (list, str, True),
+                                    "hidden": (list, str, True),
+                                    "exclude": (list, str, True)}, True)}
+    directory_struct = {"layout": (str, None, True),
+                        "files": (dict, {"sort": (list, str, True),
+                                         "exclude": (list, str, True),
+                                         "hidden": (list, str, True),
+                                         "rename": ("mapping",
+                                                    (str, str),
+                                                    True)},
+                                  True)}
+
     def __init__(self, filename, struct, displayname=None):
         self._config = {}
 

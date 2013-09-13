@@ -26,20 +26,8 @@ class Project:
         self._root_dir = project_dir
         self._test = test
 
-        config_struct = {"dirs": (dict, {"sites": (str, None, False),
-                                         "layouts": (str, None, False),
-                                         "out": (str, None, False),
-                                         "test": (str, None, True)}, False),
-                         "files": (dict, {"index": (list, str, True),
-                                          "content": (list, str, True),
-                                          "hidden": (list, str, True),
-                                          "exclude": (list, str, True)}, True),
-                         "markup": ("mapping", (str,
-                                                (list, str, True),
-                                                True),
-                                    True)}
         self._config = Config(os.path.join(self._root_dir, "stawebg.json"),
-                              config_struct)
+                              Config.global_struct)
 
         # Make directories absolute
         dirs = self._config.get(["dirs"])
@@ -187,16 +175,7 @@ class Site:
         if not os.path.isfile(filename):
             fail("Can't find config file: " + filename)
 
-        config_struct = {"dirs": (None, None, None),
-                         "markup": (None, None, None),
-                         "title": (str, None, True),
-                         "subtitle": (str, None, True),
-                         "layout": (str, None, True),
-                         "files": (dict, {"index": (list, str, True),
-                                          "content": (list, str, True),
-                                          "hidden": (list, str, True),
-                                          "exclude": (list, str, True)}, True)}
-        site_config = Config(filename, config_struct)
+        site_config = Config(filename, Config.site_struct)
         self._config = Config.merge(self._config, site_config, True)
 
     def _readHelper(self, dir_path, parent, dir_hidden=False, page_config=None):
@@ -212,17 +191,8 @@ class Site:
         entries = sorted(os.listdir(dir_path))
 
         if "stawebg.json" in entries:
-            config_struct = {"layout": (str, None, True),
-                             "files": (dict,
-                                       {"sort": (list, str, True),
-                                        "exclude": (list, str, True),
-                                        "hidden": (list, str, True),
-                                        "rename": ("mapping",
-                                                   (str, str),
-                                                   True)},
-                                       True)}
             tmp_config = Config(os.path.join(dir_path, "stawebg.json"),
-                                config_struct)
+                                Config.directory_struct)
             page_config = Config.merge(page_config, tmp_config, False)
 
         # Add layout to list -> copy later
