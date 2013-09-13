@@ -2,8 +2,6 @@
 
 import os
 import sys
-import shutil
-import errno
 import re
 
 #
@@ -56,20 +54,6 @@ def findDirs(path):
         result.extend(findDirs(tmp))
 
     return result
-
-
-def copyFile(src, dir):
-    dest = os.path.join(dir, os.path.basename(src))
-
-    shutil.copy(src, dest)
-
-
-def mkdir(path):
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            fail(str(e))
 
 
 #

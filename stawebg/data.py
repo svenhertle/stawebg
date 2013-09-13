@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 
+import errno
 import os
 import re
+import shutil
 from subprocess import Popen, PIPE
 from stawebg.config import Config
-from stawebg.helper import (listFolders, findFiles, findDirs, copyFile, mkdir,
-                            fail, matchList, cleverCapitalize)
+from stawebg.helper import (listFolders, findFiles, findDirs, fail, matchList,
+                            cleverCapitalize)
 
 version = "0.1"
 
@@ -352,10 +354,9 @@ class Page:
         return self._site.getProject().getLayout(layout)
 
     def copy(self):
-        mkdir(os.path.dirname(self._getDestFile()))
-
         # Use 'codecs' package to support UTF-8?
         try:
+            os.makedirs(os.path.dirname(self._getDestFile()))
             outf = open(self._getDestFile(), 'w')
             tplf = open(self.getLayout().getTemplate())
             outf.write(self._replaceKeywords(tplf.read()))
@@ -364,6 +365,9 @@ class Page:
         # TODO: check for other possible exceptions
         except IOError as e:
             fail("Error creating " + self._getDestFile() + ": " + str(e))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                fail(str(e))
 
         # Copy subpages
         for p in self._subpages:
@@ -529,11 +533,14 @@ class OtherFile:
         if not to:
             to = self._dest_dir
 
-        # Create directory
         out_file = os.path.join(to, self._src_path_rel)
         out_dir = os.path.dirname(out_file)
-        mkdir(out_dir)
+        try:
+            os.makedirs(out_dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                fail(str(e))
 
         site.delFromFileIndex(out_file)
-
-        copyFile(os.path.join(self._src_path_root, self._src_path_rel), out_dir)
+        shutil.copy(os.path.join(self._src_path_root, self._src_path_rel),
+                    os.path.join(out_dir, os.path.basename(self._src_path_rel)))
