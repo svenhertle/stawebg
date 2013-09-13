@@ -16,7 +16,16 @@ class Config:
             self._displayname = filename
 
         if filename:
-            self._read(filename, struct)
+            try:
+                conff = open(filename, "r")
+                self._config = self._checkDict(json.load(conff), struct)
+            except IOError as e:
+                fail("Can't open file: " + filename + os.linesep + str(e))
+            except Exception as e:
+                fail("Error parsing configuration file: " + filename +
+                     os.linesep + str(e))
+            finally:
+                conff.close()
 
     def get(self, key, do_fail=True, default=None):
         config = self._config
@@ -53,18 +62,6 @@ class Config:
 
     def copy(self):
         return deepcopy(self)
-
-    def _read(self, filename, struct):
-        try:
-            conff = open(filename, "r")
-            tmp = json.load(conff)
-            self._config = self._checkDict(tmp, struct)
-        except IOError as e:
-            fail("Can't open file: " + filename + os.linesep + str(e))
-        except Exception as e:
-            fail("Error parsing configuration file: " + filename + os.linesep +
-                 str(e))
-        conff.close()
 
     def _checkDict(self, obj, struct):
         if not struct:
