@@ -9,7 +9,7 @@
         "index":    [".*index\\.html", ".*index\\.md"],
         "content":  [".*\\.html", ".*\\.md"],
         "hidden":   [],
-        "exclude":  [".*stawebg.json"]
+        "exclude":  [".*stawebg.json", ".*~"]
     },
     "markup": {
         ".md": ["markdown"]
