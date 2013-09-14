@@ -16,5 +16,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     project = Project(args.directory, args.test)
-    project.read()
-    project.copy()
