@@ -72,7 +72,7 @@ def cleverCapitalize(text):
 
 def matchList(string, regex_lst):
     for r in regex_lst:
-        if re.match(r + '$', string):
+        if re.match(r, string):
             return True
 
     return False

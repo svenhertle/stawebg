@@ -236,6 +236,8 @@ class Site:
         # Make absolute paths and check if it's a page
         for f in entries:
             absf = os.path.join(dir_path, f)
+            if isExcluded(absf, self, page_config):
+                continue
             hidden = dir_hidden or isHidden(absf, self, page_config)
 
             # Content file -> Page
@@ -249,13 +251,11 @@ class Site:
                 self._readHelper(absf, idx, hidden, page_config.copy())
             # Unknown object
             else:
-                if not isExcluded(absf, self, page_config):
-                    tmp = OtherFile(self.getAbsSrcPath(),
-                                    os.path.relpath(
-                                        absf, self.getAbsSrcPath()),
-                                    self.getAbsDestPath())
-                    self._other_files.append(tmp)
-                    print("\tFound unkown object: " + absf)
+                tmp = OtherFile(self.getAbsSrcPath(),
+                                os.path.relpath(absf, self.getAbsSrcPath()),
+                                self.getAbsDestPath())
+                self._other_files.append(tmp)
+                print("\tFound unkown object: " + absf)
 
     def createMenu(self, cur_page):
         return self._root.createMenu(cur_page)
