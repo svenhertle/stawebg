@@ -5,6 +5,7 @@ import os
 from copy import deepcopy
 from stawebg.helper import fail
 
+
 class Config:
     def __init__(self, filename, struct, displayname=None):
         self._config = {}
@@ -61,7 +62,8 @@ class Config:
         except IOError as e:
             fail("Can't open file: " + filename + os.linesep + str(e))
         except Exception as e:
-            fail("Error parsing configuration file: " + filename + os.linesep + str(e))
+            fail("Error parsing configuration file: " + filename + os.linesep +
+                 str(e))
         conff.close()
 
     def _checkDict(self, obj, struct):
@@ -69,7 +71,8 @@ class Config:
             return obj
 
         if type(obj) != dict:
-            fail(str(obj) + " should be a dictionary in file " + self._displayname)
+            fail(str(obj) + " should be a dictionary in file " +
+                 self._displayname)
 
         result = {}
         for k in struct:
@@ -81,7 +84,8 @@ class Config:
                         del obj[k]
                         # TODO: delete empty dict?
                     else:
-                        fail(str(k) + " should be a dictionary in file " + self._displayname)
+                        fail(str(k) + " should be a dictionary in file " +
+                             self._displayname)
                 # Check list
                 elif struct[k][0] == list:
                     self._checkList(obj[k], struct[k][1], k)
@@ -96,19 +100,22 @@ class Config:
                     del obj[k]
                 # Mustn't be here
                 elif struct[k][0] is None:
-                    fail("Can't configure " + str(k) + " in " + self._displayname)
+                    fail("Can't configure " + str(k) + " in " +
+                         self._displayname)
                 # Check other types
                 elif struct[k][0] == type(obj[k]):
                     result[k] = obj[k]
                     del obj[k]
                 # Requested and given type are not equal
                 else:
-                    fail(str(k) + " has the wrong type in file " + self._displayname)
+                    fail(str(k) + " has the wrong type in file " +
+                         self._displayname)
             elif not struct[k][2] and struct[k][0]:  # Not optional
                 fail("Can't find " + str(k) + " in " + self._displayname)
 
         if len(obj):
-            print("Warning: unknown config options in file " + self._displayname + ": " + str(obj))
+            print("Warning: unknown config options in file " +
+                  self._displayname + ": " + str(obj))
 
         return result
 
@@ -117,7 +124,8 @@ class Config:
             fail(name + " should be a list in file " + self._displayname)
         for i in lst:
             if type(i) != typeof:
-                fail("Some elements of the list " + name + " in the file " + self._displayname + " have a wrong type")
+                fail("Some elements of the list " + name + " in the file " +
+                     self._displayname + " have a wrong type")
 
     def _checkMapping(self, mapping, typeof, name):
         if type(mapping) != dict:
@@ -138,7 +146,8 @@ class Config:
                     else:
                         fail("config.py, _checkMapping: type not supported")
                 elif type(mapping[i]) != typeof[1]:
-                    fail(str(mapping[i]) + " has the wrong type in file " + self._displayname)
+                    fail(str(mapping[i]) + " has the wrong type in file " +
+                         self._displayname)
             else:
                 fail(name + " has the wrong type in file " + self._displayname)
 

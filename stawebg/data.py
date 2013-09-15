@@ -1,14 +1,13 @@
 #!/usr/bin/python3
 
-import json
-import os,sys
+import os
 import re
 from subprocess import Popen, PIPE
 from stawebg.config import Config
-from stawebg.helper import (listFolders, findFiles, findDirs, copyFile, mkdir, fail,
-                            matchList, cleverCapitalize)
+from stawebg.helper import (listFolders, findFiles, findDirs, copyFile, mkdir,
+                            fail, matchList, cleverCapitalize)
 
-version="0.1"
+version = "0.1"
 
 isFile = lambda f: os.path.isfile(f)
 matchPath = lambda f, c: os.path.abspath(f)[len(os.path.abspath(c.getAbsSrcPath()))+1:]
@@ -25,18 +24,20 @@ class Project:
         self._root_dir = project_dir
         self._test = test
 
-        markup_struct = (list, str, True)
-        config_struct = {"dirs":
-                (dict, {"sites": (str, None, False),
-                    "layouts": (str, None, False),
-                    "out": (str, None, False),
-                    "test": (str, None, True)}, False),
-                "files": (dict, {"index": (list, str, True),
-                    "content": (list, str, True),
-                    "hidden": (list, str, True),
-                    "exclude": (list, str, True)}, True),
-                "markup": ("mapping", (str, markup_struct, True), True)}
-        self._config = Config(os.path.join(self._root_dir, "stawebg.json"), config_struct)
+        config_struct = {"dirs": (dict, {"sites": (str, None, False),
+                                         "layouts": (str, None, False),
+                                         "out": (str, None, False),
+                                         "test": (str, None, True)}, False),
+                         "files": (dict, {"index": (list, str, True),
+                                          "content": (list, str, True),
+                                          "hidden": (list, str, True),
+                                          "exclude": (list, str, True)}, True),
+                         "markup": ("mapping", (str,
+                                                (list, str, True),
+                                                True),
+                                    True)}
+        self._config = Config(os.path.join(self._root_dir, "stawebg.json"),
+                              config_struct)
 
         # Make directories absolute
         dirs = self._config.get(["dirs"])
@@ -89,7 +90,8 @@ class Layout:
     def __init__(self, project, name):
         self._project = project
         self._name = name
-        self._dir = os.path.join(self._project.getConfig(['dirs', 'layouts']), name)
+        self._dir = os.path.join(self._project.getConfig(['dirs', 'layouts']),
+                                 name)
         self._template = os.path.join(self._dir, 'template.html')
         self._other_files = []
 
@@ -177,27 +179,29 @@ class Site:
         self._cleanupOutput()
 
     def _readConfig(self):
-        filename = os.path.join(self.getConfig(["dirs", "sites"]), self._name + ".json")
+        filename = os.path.join(self.getConfig(["dirs", "sites"]),
+                                self._name + ".json")
 
         if not os.path.isfile(filename):
             fail("Can't find config file: " + filename)
 
         config_struct = {"dirs": (None, None, None),
-                "markup": (None, None, None),
-                "title": (str, None, True),
-                "subtitle": (str, None, True),
-                "layout": (str, None, True),
-                "files": (dict, {"index": (list, str, True),
-                    "content": (list, str, True),
-                    "hidden": (list, str, True),
-                    "exclude": (list, str, True)}, True)}
+                         "markup": (None, None, None),
+                         "title": (str, None, True),
+                         "subtitle": (str, None, True),
+                         "layout": (str, None, True),
+                         "files": (dict, {"index": (list, str, True),
+                                          "content": (list, str, True),
+                                          "hidden": (list, str, True),
+                                          "exclude": (list, str, True)}, True)}
         site_config = Config(filename, config_struct)
         self._config = Config.merge(self._config, site_config, True)
 
     def _readHelper(self, dir_path, parent, dir_hidden=False, page_config=None):
         index_rename = None
         if page_config:
-            index_rename = page_config.get(["files", "rename", os.path.basename(dir_path)], False)
+            index_rename = page_config.get(["files", "rename",
+                                            os.path.basename(dir_path)], False)
             page_config.delete(["files", "sort"], False)
             page_config.delete(["files", "rename"], False)
         else:
@@ -207,11 +211,16 @@ class Site:
 
         if "stawebg.json" in entries:
             config_struct = {"layout": (str, None, True),
-                "files": (dict, {"sort": (list, str, True),
-                    "exclude": (list, str, True),
-                    "hidden": (list, str, True),
-                    "rename": ("mapping", (str, str), True)}, True)}
-            tmp_config = Config(os.path.join(dir_path, "stawebg.json"), config_struct)
+                             "files": (dict,
+                                       {"sort": (list, str, True),
+                                        "exclude": (list, str, True),
+                                        "hidden": (list, str, True),
+                                        "rename": ("mapping",
+                                                   (str, str),
+                                                   True)},
+                                       True)}
+            tmp_config = Config(os.path.join(dir_path, "stawebg.json"),
+                                config_struct)
             page_config = Config.merge(page_config, tmp_config, False)
 
         # Add layout to list -> copy later
@@ -224,9 +233,9 @@ class Site:
             if isFile(absf) and isCont(absf, self) and isIndex(absf, self):
                 if index_rename:
                     page_config.add(["files", "rename", f], index_rename)
-                idx = Page(os.path.split(dir_path)[1], absf,
-                        self, parent, dir_hidden or isHidden(absf, self, page_config),
-                        page_config)
+                idx = Page(os.path.split(dir_path)[1], absf, self, parent,
+                           dir_hidden or isHidden(absf, self, page_config),
+                           page_config)
                 entries.remove(f)
                 break
         # …or create an empty page as index
@@ -234,8 +243,8 @@ class Site:
             dirname = os.path.split(dir_path)[1]
             if index_rename:
                 page_config.add(["files", "rename", None], index_rename)
-            idx = Page(dirname, None, self, parent, dir_hidden or isHidden(dirname, self, page_config),
-                    page_config)
+            idx = Page(dirname, None, self, parent, dir_hidden or
+                       isHidden(dirname, self, page_config), page_config)
 
         if parent:
             parent.appendPage(idx)
@@ -243,7 +252,7 @@ class Site:
             self._root = idx
 
         # Sort entries as specified in configuration
-        sorted_entries = page_config.get(["files","sort"], False, [])
+        sorted_entries = page_config.get(["files", "sort"], False, [])
         for s in reversed(sorted_entries):
             absf = os.path.join(dir_path, s)
             if not s in entries:
@@ -261,7 +270,7 @@ class Site:
             if isFile(absf) and isCont(absf, self):
                 print("\tFound page: " + absf)
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
-                                hidden, page_config))
+                                    hidden, page_config))
             # Directory -> Go inside
             elif os.path.isdir(absf):
                 self._readHelper(absf, idx, hidden, page_config.copy())
@@ -352,7 +361,8 @@ class Page:
             outf.write(self._replaceKeywords(tplf.read()))
             tplf.close()
             outf.close()
-        except IOError as e: #TODO: check exceptions
+        # TODO: check for other possible exceptions
+        except IOError as e:
             fail("Error creating " + self._getDestFile() + ": " + str(e))
 
         # Copy subpages
@@ -374,7 +384,8 @@ class Page:
         tool = config.get(os.path.splitext(self._absSrc)[1])
 
         if tool:
-            out, err = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE).communicate(text.encode())
+            pipe = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            out, err = pipe.communicate(text.encode())
             if len(err):
                 fail(' '.join(tool) + ": " + err.decode())
             return out.decode()

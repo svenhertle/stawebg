@@ -44,6 +44,7 @@ def findFiles(path, exclude_ext=[]):
 
     return result
 
+
 def findDirs(path):
     dirs = listFolders(path)
 
@@ -55,7 +56,6 @@ def findDirs(path):
         result.extend(findDirs(tmp))
 
     return result
-
 
 
 def copyFile(src, dir):
@@ -85,6 +85,7 @@ def cleverCapitalize(text):
     else:
         return text[0].upper() + text[1:]
 
+
 def matchList(string, regex_lst):
     for r in regex_lst:
         if re.match(r + '$', string):
@@ -98,5 +99,5 @@ def matchList(string, regex_lst):
 
 
 def fail(text):
-    sys.stderr.write(text + "\n")
+    sys.stderr.write(text + os.linesep)
     sys.exit(1)
