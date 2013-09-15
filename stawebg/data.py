@@ -245,6 +245,7 @@ class Site:
                                     hidden, page_config))
             # Directory -> Go inside
             elif os.path.isdir(absf):
+                print("\tFound dir:  " + absf)
                 self._readHelper(absf, idx, hidden, page_config.copy())
             # Unknown object
             else:
