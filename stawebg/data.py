@@ -34,11 +34,18 @@ class Project:
         for k in dirs:
             dirs[k] = os.path.join(self._root_dir, dirs[k])
 
-    def read(self):
-        self._readLayouts()
-        self._readSites()
+        # Add all layouts to list
+        for name in listFolders(self.getConfig(['dirs', 'layouts'])):
+            self._layouts[name] = Layout(self, name)
+            self._layouts[name].read()
 
-    def copy(self):
+        # Add all site directories to list
+        for s in listFolders(self.getConfig(['dirs', 'sites'])):
+            site = Site(s, self)
+            self._sites.append(site)
+            site.read()
+
+        # copy files to out dir
         for s in self._sites:
             s.copy()
 
@@ -61,19 +68,6 @@ class Project:
             return self.getConfig(["dirs", "test"])
         else:
             return self.getConfig(["dirs", "out"])
-
-    # Add all layouts to list
-    def _readLayouts(self):
-        for name in listFolders(self.getConfig(['dirs', 'layouts'])):
-            self._layouts[name] = Layout(self, name)
-            self._layouts[name].read()
-
-    # Add all site directories to list
-    def _readSites(self):
-        for s in listFolders(self.getConfig(['dirs', 'sites'])):
-            site = Site(s, self)
-            self._sites.append(site)
-            site.read()
 
 
 class Layout:
@@ -127,28 +121,27 @@ class Site:
     def getProject(self):
         return self._project
 
-    def addLayout(self, name):
-        layout = self._project.getLayout(name)
-        if layout not in self._layouts:
-            self._layouts.append(layout)
-
     def getSiteTitle(self):
-        tmp = self.getConfig(["title"], False)
-        if tmp:
-            return tmp
-
-        return self._name
+        return self.getConfig(["title"], default=self._name)
 
     def getSiteSubtitle(self):
-        tmp = self.getConfig(["subtitle"], False)
-        if tmp:
-            return tmp
-
-        return ""
+        return self.getConfig(["subtitle"], default="")
 
     def read(self):
-        self._readConfig()
-        self._createFileIndex()
+        # read site specific config
+        filename = os.path.join(self.getConfig(["dirs", "sites"]),
+                                self._name + ".json")
+        if not os.path.isfile(filename):
+            fail("Can't find config file: " + filename)
+        site_config = Config(filename, Config.site_struct)
+        self._config = Config.merge(self._config, site_config, True)
+
+        # create file index
+        path = self.getAbsDestPath()
+        if os.path.isdir(path):
+            self._file_index = findFiles(path)
+
+        # read all pages
         self._readHelper(self.getAbsSrcPath(), self._root)
 
     def copy(self):
@@ -166,17 +159,22 @@ class Site:
             f.copy(self)
 
         # Cleanup
-        self._cleanupOutput()
+        # remove files contained in the index
+        for f in self._file_index:
+            print("\tRemove old file: " + f)
+            try:
+                os.remove(f)
+            except OSError as e:
+                print("\tError: " + str(e))
 
-    def _readConfig(self):
-        filename = os.path.join(self.getConfig(["dirs", "sites"]),
-                                self._name + ".json")
-
-        if not os.path.isfile(filename):
-            fail("Can't find config file: " + filename)
-
-        site_config = Config(filename, Config.site_struct)
-        self._config = Config.merge(self._config, site_config, True)
+        # Delete empty directories
+        for d in findDirs(self.getAbsDestPath()):
+            if not os.listdir(d):
+                print("\tRemove empty directory: " + d)
+                try:
+                    os.rmdir(d)
+                except OSError as e:
+                    print("\tError: " + str(e))
 
     def _readHelper(self, dir_path, parent, dir_hidden=False, page_config=None):
         index_rename = None
@@ -196,7 +194,9 @@ class Site:
             page_config = Config.merge(page_config, tmp_config, False)
 
         # Add layout to list -> copy later
-        self.addLayout(page_config.get(["layout"], False))
+        layout = self._project.getLayout(page_config.get(["layout"], False))
+        if layout not in self._layouts:
+            self._layouts.append(layout)
 
         # First we have to find the index file in this directory…
         idx = None
@@ -260,34 +260,9 @@ class Site:
     def createMenu(self, cur_page):
         return self._root.createMenu(cur_page)
 
-    def _createFileIndex(self):
-        path = self.getAbsDestPath()
-        if os.path.isdir(path):
-            self._file_index = findFiles(path)
-
     def delFromFileIndex(self, path):
         if path in self._file_index:
             self._file_index.remove(path)
-
-    def _rmFileIndex(self):
-        for f in self._file_index:
-            print("\tRemove old file: " + f)
-            try:
-                os.remove(f)
-            except OSError as e:
-                print("\tError: " + str(e))
-
-    def _cleanupOutput(self):
-        self._rmFileIndex()
-
-        # Delete empty directories
-        for d in findDirs(self.getAbsDestPath()):
-            if not os.listdir(d):
-                print("\tRemove empty directory: " + d)
-                try:
-                    os.rmdir(d)
-                except OSError as e:
-                    print("\tError: " + str(e))
 
 
 class Page:
@@ -304,9 +279,6 @@ class Page:
 
     def appendPage(self, p):
         self._subpages.append(p)
-
-    def getPages(self):
-        return self._subpages
 
     def getParent(self):
         return self._parent
@@ -389,8 +361,7 @@ class Page:
         if not self.isRoot():
             tmp_path = os.path.join(tmp_path, self.getName())
 
-        return os.path.join(self._site.getAbsDestPath(), tmp_path,
-                            "index.html")
+        return os.path.join(self._site.getAbsDestPath(), tmp_path, "index.html")
 
     def getRootLink(self):
         tmp = ""
@@ -470,19 +441,19 @@ class Page:
                 continue
 
             active = ""
-            if p.pageIsInPathTo(cur_page) and (not p.isRoot() or p == cur_page):
+            if p._pageIsInPathTo(cur_page) and (not p.isRoot() or p == cur_page):
                 active = " class=\"active\""
 
             tmp = ''.join([tmp, "<li><a href=\"", p.getLink(cur_page), "\"",
                           active, ">", p.getShortTitle(), "</a></li>\n"])
 
             # Create submenu
-            if not p.isRoot() and p.pageIsInPathTo(cur_page) and not last:
+            if not p.isRoot() and p._pageIsInPathTo(cur_page) and not last:
                 tmp += p.createMenu(cur_page, found)
 
         return tmp + "</ul>\n"
 
-    def pageIsInPathTo(self, dest):
+    def _pageIsInPathTo(self, dest):
         parent = dest
         while parent:
             if parent == self:
