@@ -333,11 +333,11 @@ class Page:
             tplf.close()
             outf.close()
         # TODO: check for other possible exceptions
-        except IOError as e:
-            fail("Error creating " + self._getDestFile() + ": " + str(e))
         except OSError as e:
             if e.errno != errno.EEXIST:
                 fail(str(e))
+        except IOError as e:
+            fail("Error creating " + self._getDestFile() + ": " + str(e))
 
         # Copy subpages
         for p in self._subpages:
