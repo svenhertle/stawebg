@@ -222,10 +222,10 @@ class Site:
         return self._root
 
     def getSiteTitle(self):
-        return self.getConfig(["title"], default=self._name)
+        return self.getConfig(["title"], False, self._name)
 
     def getSiteSubtitle(self):
-        return self.getConfig(["subtitle"], default="")
+        return self.getConfig(["subtitle"], False, "")
 
     def read(self):
         # read site specific config
