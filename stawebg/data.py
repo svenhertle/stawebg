@@ -38,7 +38,10 @@ class Project:
             dirs[k] = os.path.join(self._root_dir, dirs[k])
 
         # Set locale
-        locale.setlocale(locale.LC_ALL, self.getConfig(["locale"], False, ""))
+        try:
+            locale.setlocale(locale.LC_ALL, self.getConfig(["locale"], False, ""))
+        except locale.Error as e:
+            fail("Failed to set the locale \"" + self.getConfig(["locale"], False, "") + "\": " + str(e))
 
         # Add all layouts to list
         for name in listFolders(self.getConfig(['dirs', 'layouts'])):
