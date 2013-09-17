@@ -20,7 +20,10 @@ class Config:
                                 True),
                      "locale" : (str, None, False),
                      "timeformat" : (str, None, False),
-                     "timezone" : (str, None, False)}
+                     "timezone" : (str, None, False),
+                     "variables": ("mapping",
+                                   (str, str, True),
+                                   True)}
     site_struct = {"dirs": (None, None, None),
                    "markup": (None, None, None),
                    "title": (str, None, True),
@@ -33,7 +36,10 @@ class Config:
                    "locale" : (str, None, True),
                    "timeformat" : (str, None, True),
                    "timezone" : (str, None, True),
-                   "url": (str, None, True)}
+                   "url": (str, None, True),
+                   "variables": ("mapping",
+                                 (str, str, True),
+                                 True)}
     directory_struct = {"layout": (str, None, True),
                         "files": (dict,
                                   {"sort": (list, str, True),
@@ -52,7 +58,10 @@ class Config:
                                            "title_length": (int, None, True),
                                            "content_length": (int, None, True)},
                                           True)},
-                                 True)}
+                                 True),
+                        "variables": ("mapping",
+                                       (str, str, True),
+                                       True)}
 
     def __init__(self, filename, struct, displayname=None):
         self._config = {}

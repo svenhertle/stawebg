@@ -117,26 +117,23 @@ class Layout:
     def getSubdir(self):
         return os.path.join("style", self._name)
 
-    def useTemplate(self, dest, src, reps, ext=None):
-        text = self._templates["template"][:]
-        text = text.replace("%CONTENT%", self._translateMarkup(src, ext))
-        self._createOutput(dest, text, reps)
+    def useTemplate(self, dest, src, reps, user_reps, ext=None):
+        text = self._prepareTemplate("template", user_reps, reps, self._translateMarkup(src, ext))
+        self._createOutput(dest, text)
 
-    def useBlogEntry(self, src, reps):
-        text = self._templates["entry"][:]
-        text = text.replace("%CONTENT%", self._translateMarkup(src))
+    def useBlogEntry(self, src, reps, user_reps):
+        return self._prepareTemplate("entry", user_reps, reps, self._translateMarkup(src))
+
+    def useBlogSeparator(self, user_reps):
+        return self._prepareTemplate("separator", user_reps, [], "")
+
+    def useBlogSingleEntry(self, src, reps, user_reps):
+        return self._prepareTemplate("singleentry", user_reps, reps, self._translateMarkup(src))
+
+    def useBlogRSSEntry(self, src, reps, user_reps):
+        text = self._removeHTML(self._translateMarkup(src))
+        text = self._replaceKeywords(text, self._transformUserReps(user_reps))
         return self._replaceKeywords(text, reps)
-
-    def useBlogSeparator(self):
-        return self._templates["separator"][:]
-
-    def useBlogSingleEntry(self, src, reps):
-        text = self._templates["singleentry"][:]
-        text = text.replace("%CONTENT%", self._translateMarkup(src))
-        return self._replaceKeywords(text, reps)
-
-    def useBlogRSSEntry(self, src, reps):
-        return self._replaceKeywords(self._removeHTML(self._translateMarkup(src)), reps)
 
     def _readFile(self, src):
         try:
@@ -144,12 +141,12 @@ class Layout:
         except IOError as e:
             fail("Error reading \"" + src + "\": " + str(e))
 
-    def _createOutput(self, dest, text, reps):
+    def _createOutput(self, dest, text):
         mkdir(os.path.dirname(dest))
 
         try:
             outf = open(dest, 'w')
-            outf.write(self._replaceKeywords(text, reps))
+            outf.write(text)
             outf.close()
         except IOError as e: #TODO: check exceptions
             fail("Error creating " + dest + ": " + str(e))
@@ -191,8 +188,22 @@ class Layout:
         rc = re.compile('|'.join(map(re.escape, reps)))
         return rc.sub(trans, text)
 
+    def _prepareTemplate(self, name, user_reps, reps, content):
+        # User reps -> content -> user reps -> reps
+        text = self._templates[name][:]
+        text = self._replaceKeywords(text, self._transformUserReps(user_reps))
+        text = text.replace("%CONTENT%", content)
+        text = self._replaceKeywords(text, self._transformUserReps(user_reps))
+        return self._replaceKeywords(text, reps)
+
     def _removeHTML(self, text):
         return re.sub('<.*?>', '', text)
+
+    def _transformUserReps(self, reps):
+        result = {}
+        for i in reps:
+            result["%_" + i + "%"] = reps[i]
+        return result
 
 
 class Site:
@@ -421,12 +432,13 @@ class Page:
                 "%URL%": self._config.get(["url"], False, "")}
         if self._blog:
             reps["%BLOG%"] = self._blog.getHTML(self)
+        user_reps = self._config.get(["variables"], False, [])
 
         # regular file
         if not self._content:
-            self.getLayout().useTemplate(self._getDestFile(), self._absSrc, reps)
+            self.getLayout().useTemplate(self._getDestFile(), self._absSrc, reps, user_reps)
         else:
-            self.getLayout().useTemplate(self._getDestFile(), self._content[0], reps, self._content[1])
+            self.getLayout().useTemplate(self._getDestFile(), self._content[0], reps, user_reps, self._content[1])
 
         # Copy subpages
         for p in self._subpages:
@@ -597,16 +609,18 @@ class Blog:
 
     def getHTML(self, origin):
         tmp = ""
+        user_reps = self._config.get(["variables"], False, [])
         for n, i in enumerate(sorted(self._entries, reverse=True)):
-            tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getReps(i, origin))
+            tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getReps(i, origin), user_reps)
             if n != len(self._entries)-1:
-                tmp += self.getLayout().useBlogSeparator()
+                tmp += self.getLayout().useBlogSeparator(user_reps)
 
         return tmp
 
     def copy(self):
+        user_reps = self._config.get(["variables"], False, [])
         for i in sorted(self._entries, reverse=True):
-            content = self.getLayout().useBlogSingleEntry(self._entries[i][1], self._getReps(i, self._index_page))
+            content = self.getLayout().useBlogSingleEntry(self._entries[i][1], self._getReps(i, self._index_page), user_reps)
             page = Page(self._getTitle(i), None, self._site, self._index_page, True, None, self._config, (content, "md"))
             page.copy()
 
@@ -654,6 +668,7 @@ class Blog:
         if not self._config.get(["blog", "rss"], False):
             return
 
+        user_reps = self._config.get(["variables"], False, [])
         dest = os.path.join(self._site.getAbsDestPath(), self._config.get(["blog", "rss", "file"]))
         with open(dest, "wt") as f:
             TODO = ""
@@ -681,7 +696,7 @@ class Blog:
             f.write('<pubDate>' + self._getRSSDate(datetime.now()) + '</pubDate>\n')
 
             for i in sorted(self._entries, reverse=True):
-                html=self.getLayout().useBlogRSSEntry(self._entries[i][1], self._getReps(i, self._site.getRoot(), True))
+                html=self.getLayout().useBlogRSSEntry(self._entries[i][1], self._getReps(i, self._site.getRoot(), True), user_reps)
                 # FIXME: remove HTML
                 f.write('<item>\n')
                 f.write('<title>' + self._RSSencode(self._getRSSTitle(html)) + '</title>\n')

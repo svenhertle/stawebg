@@ -14,6 +14,10 @@
     "markup": {
         ".md": ["markdown"]
     },
+    "variables":
+    {
+        "COPYRIGHT": "Sven Hertle"
+    },
     "locale": "en_GB",
     "timeformat": "%d %B %Y, %H:%M",
     "timezone": "+0200"
