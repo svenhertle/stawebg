@@ -2,6 +2,7 @@
     "blog":
     {
         "dir": "data",
+        "per-page": 2,
         "rss":
         {
             "file": "news.rss",

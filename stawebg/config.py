@@ -49,6 +49,7 @@ class Config:
                                   True),
                         "blog": (dict,
                                  {"dir": (str, None, False),
+                                  "per-page": (int, None, True),
                                   "rss": (dict,
                                           {"file": (str, None, False),
                                            "title": (str, None, False),

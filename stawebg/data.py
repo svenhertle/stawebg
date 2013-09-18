@@ -117,9 +117,10 @@ class Layout:
     def getSubdir(self):
         return os.path.join("style", self._name)
 
-    def useTemplate(self, dest, src, reps, user_reps, ext=None):
-        text = self._prepareTemplate("template", user_reps, reps, self._translateMarkup(src, ext))
-        self._createOutput(dest, text)
+    def useTemplate(self, src, reps, user_reps, ext=None):
+        content = self._translateMarkup(src, ext)
+        text = self._prepareTemplate("template", user_reps, reps, content)
+        return (text, content)
 
     def useBlogEntry(self, src, reps, user_reps):
         return self._prepareTemplate("entry", user_reps, reps, self._translateMarkup(src))
@@ -141,7 +142,7 @@ class Layout:
         except IOError as e:
             fail("Error reading \"" + src + "\": " + str(e))
 
-    def _createOutput(self, dest, text):
+    def createOutput(self, dest, text):  # TODO: move to helper.py?, use for other files too?
         mkdir(os.path.dirname(dest))
 
         try:
@@ -430,15 +431,21 @@ class Page:
                 "%SITESUBTITLE%": self._site.getSiteSubtitle(),
                 "%MENU%": self._site.createMenu(self),
                 "%URL%": self._config.get(["url"], False, "")}
-        if self._blog:
-            reps["%BLOG%"] = self._blog.getHTML(self)
         user_reps = self._config.get(["variables"], False, [])
 
         # regular file
+        output = ""
+        content = ""
         if not self._content:
-            self.getLayout().useTemplate(self._getDestFile(), self._absSrc, reps, user_reps)
+            output, content = self.getLayout().useTemplate(self._absSrc, reps, user_reps)
         else:
-            self.getLayout().useTemplate(self._getDestFile(), self._content[0], reps, user_reps, self._content[1])
+            output, content = self.getLayout().useTemplate(self._content[0], reps, user_reps, self._content[1])
+
+        if self._blog:
+            output = output.replace("%BLOG%", self._blog.getPageOne(self))
+            self._blog.createPages(self, content)
+
+        self.getLayout().createOutput(self._getDestFile(), output)
 
         # Copy subpages
         for p in self._subpages:
@@ -607,12 +614,37 @@ class Blog:
         layout = self._config.get(["layout"], False)
         return self._site.getProject().getLayout(layout)
 
-    def getHTML(self, origin):
-        tmp = ""
+    def getPageOne(self, origin):
+        return self._getHTML(origin, 1)
+
+    def createPages(self, origin, template):
+        page_number = 1
+        while True:
+            tmp = self._getHTML(origin, page_number)
+            if not tmp:
+                return
+            content = template.replace("%BLOG%", tmp)
+            page = Page(str(page_number), None, self._site, self._index_page, True, None, self._config, (content, "html"))
+            page.copy()
+            page_number += 1
+
+    def _getHTML(self, origin, page):
         user_reps = self._config.get(["variables"], False, [])
+        per_page = self._config.get(["blog", "per-page"], False, 0)
+
+        start = (page-1)*per_page
+        end = page*per_page-1
+
+        if per_page != 0 and start >= len(self._entries):  # No entries for this page
+            return None
+
+        tmp = ""
         for n, i in enumerate(sorted(self._entries, reverse=True)):
+            if (n < start or n > end) and per_page != 0:
+                continue
+
             tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getReps(i, origin), user_reps)
-            if n != len(self._entries)-1:
+            if n != end and n != len(self._entries)-1:  # Last element on page or last element of all entries
                 tmp += self.getLayout().useBlogSeparator(user_reps)
 
         return tmp
@@ -671,8 +703,6 @@ class Blog:
         user_reps = self._config.get(["variables"], False, [])
         dest = os.path.join(self._site.getAbsDestPath(), self._config.get(["blog", "rss", "file"]))
         with open(dest, "wt") as f:
-            TODO = ""
-
             locale_backup = locale.getlocale(locale.LC_ALL)
             locale.setlocale(locale.LC_ALL, "en_GB")
 
