@@ -18,9 +18,9 @@ class Config:
                      "markup": ("mapping",
                                 (str, (list, str, True), True),
                                 True),
-                     "locale" : (str, None, False),
-                     "timeformat" : (str, None, False),
-                     "timezone" : (str, None, False),
+                     "locale" : (str, None, True),
+                     "timeformat" : (str, None, True),
+                     "timezone" : (str, None, True),
                      "variables": ("mapping",
                                    (str, str, True),
                                    True)}
@@ -71,17 +71,18 @@ class Config:
         else:
             self._displayname = filename
 
-        try:
-            conff = open(filename, "r")
+        if filename:  # filename is not set if Config is created in merge
             try:
-                self._config = self._checkDict(json.load(conff), struct)
-            except Exception as e:
-                fail("Error parsing configuration file: " + filename +
-                     os.linesep + str(e))
-            finally:
-                conff.close()
-        except IOError as e:
-            fail("Can't open file: " + filename + os.linesep + str(e))
+                conff = open(filename, "r")
+                try:
+                    self._config = self._checkDict(json.load(conff), struct)
+                except Exception as e:
+                    fail("Error parsing configuration file: " + filename +
+                         os.linesep + str(e))
+                finally:
+                    conff.close()
+            except IOError as e:
+                fail("Can't open file: " + filename + os.linesep + str(e))
 
     def get(self, key, do_fail=True, default=None):
         config = self._config
