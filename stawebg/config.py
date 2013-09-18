@@ -65,7 +65,6 @@ class Config:
 
     def __init__(self, filename, struct, displayname=None):
         self._config = {}
-        conff = None
 
         if displayname:
             self._displayname = displayname
@@ -74,14 +73,15 @@ class Config:
 
         try:
             conff = open(filename, "r")
-            self._config = self._checkDict(json.load(conff), struct)
+            try:
+                self._config = self._checkDict(json.load(conff), struct)
+            except Exception as e:
+                fail("Error parsing configuration file: " + filename +
+                     os.linesep + str(e))
+            finally:
+                conff.close()
         except IOError as e:
             fail("Can't open file: " + filename + os.linesep + str(e))
-        except Exception as e:
-            fail("Error parsing configuration file: " + filename + os.linesep +
-                 str(e))
-        finally:
-            conff.close()
 
     def get(self, key, do_fail=True, default=None):
         config = self._config
