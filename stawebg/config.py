@@ -50,6 +50,8 @@ class Config:
                         "blog": (dict,
                                  {"dir": (str, None, False),
                                   "per-page": (int, None, True),
+                                  "next": (str, None, True),
+                                  "previous": (str, None, True),
                                   "rss": (dict,
                                           {"file": (str, None, False),
                                            "title": (str, None, False),

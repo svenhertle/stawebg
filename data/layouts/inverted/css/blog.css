@@ -1,9 +1,27 @@
 div.blog h1
 {
-    font-size: 1.5em
+    font-size: 1.5em;
 }
 
 div.blog h2
 {
-    font-size: 1.17em
+    font-size: 1.17em;
+}
+
+div.bloglist
+{
+    text-align:center;
+}
+
+div.bloglist ul
+{
+    margin:0;
+    padding:0;
+    list-style: none;
+    display:inline;
+}
+
+div.bloglist ul li
+{
+    display: inline;
 }

@@ -1,13 +1,14 @@
 #!/usr/bin/python3
 
+import cgi
 import errno
+import locale
+import math
 import os
 import re
 import shutil
-from subprocess import Popen, PIPE
-import locale
-import cgi
 from datetime import datetime
+from subprocess import Popen, PIPE
 from stawebg.config import Config
 from stawebg.helper import (listFolders, findFiles, findDirs, fail, matchList,
                             cleverCapitalize, cutStr, mkdir)
@@ -91,6 +92,8 @@ class Layout:
         self._files["template"] = os.path.join(self._dir, 'template.html')
         self._files["entry"] = os.path.join(self._dir, 'blog', 'entry.html')
         self._files["separator"] = os.path.join(self._dir, 'blog', 'separator.html')
+        self._files["begin"] = os.path.join(self._dir, 'blog', 'begin.html')
+        self._files["end"] = os.path.join(self._dir, 'blog', 'end.html')
         self._files["singleentry"] = os.path.join(self._dir, 'blog', 'singleentry.html')
 
         self._templates = {}
@@ -131,10 +134,16 @@ class Layout:
     def useBlogSingleEntry(self, src, reps, user_reps):
         return self._prepareTemplate("singleentry", user_reps, reps, self._translateMarkup(src))
 
+    def useBlogBegin(self, reps, user_reps):
+        return self._prepareTemplate("begin", user_reps, reps, "")
+
+    def useBlogEnd(self, reps, user_reps):
+        return self._prepareTemplate("end", user_reps, reps, "")
+
     def useBlogRSSEntry(self, src, reps, user_reps):
         text = self._removeHTML(self._translateMarkup(src))
-        text = self._replaceKeywords(text, self._transformUserReps(user_reps))
-        return self._replaceKeywords(text, reps)
+        text = self.replaceKeywords(text, self._transformUserReps(user_reps))
+        return self.replaceKeywords(text, reps)
 
     def _readFile(self, src):
         try:
@@ -181,7 +190,7 @@ class Layout:
             return out.decode()
         return text
 
-    def _replaceKeywords(self, text, reps):
+    def replaceKeywords(self, text, reps):
         if not reps:
             return text
 
@@ -192,10 +201,10 @@ class Layout:
     def _prepareTemplate(self, name, user_reps, reps, content):
         # User reps -> content -> user reps -> reps
         text = self._templates[name][:]
-        text = self._replaceKeywords(text, self._transformUserReps(user_reps))
+        text = self.replaceKeywords(text, self._transformUserReps(user_reps))
         text = text.replace("%CONTENT%", content)
-        text = self._replaceKeywords(text, self._transformUserReps(user_reps))
-        return self._replaceKeywords(text, reps)
+        text = self.replaceKeywords(text, self._transformUserReps(user_reps))
+        return self.replaceKeywords(text, reps)
 
     def _removeHTML(self, text):
         return re.sub('<.*?>', '', text)
@@ -442,7 +451,7 @@ class Page:
             output, content = self.getLayout().useTemplate(self._content[0], reps, user_reps, self._content[1])
 
         if self._blog:
-            output = output.replace("%BLOG%", self._blog.getPageOne(self))
+            output = self._blog.getPageOne(self, output)
             self._blog.createPages(self, content)
 
         self.getLayout().createOutput(self._getDestFile(), output)
@@ -614,49 +623,94 @@ class Blog:
         layout = self._config.get(["layout"], False)
         return self._site.getProject().getLayout(layout)
 
-    def getPageOne(self, origin):
-        return self._getHTML(origin, 1)
+    def getPageOne(self, origin, template):
+        return template.replace("%BLOG%", self._getHTML(origin, 1, True))
 
     def createPages(self, origin, template):
+        if self._config.get(["blog", "per-page"], False, 0) == 0:
+            return
+
         page_number = 1
         while True:
-            tmp = self._getHTML(origin, page_number)
+            tmp = self._getHTML(origin, page_number, False)
             if not tmp:
                 return
             content = template.replace("%BLOG%", tmp)
-            page = Page(str(page_number), None, self._site, self._index_page, True, None, self._config, (content, "html"))
+            page = Page(str(page_number), None, self._site, origin, True, None, self._config, (content, "html"))
             page.copy()
             page_number += 1
 
-    def _getHTML(self, origin, page):
+    def copy(self):
+        user_reps = self._config.get(["variables"], False, [])
+        for i in sorted(self._entries, reverse=True):
+            content = self.getLayout().useBlogSingleEntry(self._entries[i][1], self._getEntryReps(i, self._index_page), user_reps)
+            page = Page(self._getTitle(i), None, self._site, self._index_page, True, None, self._config, (content, "md"))
+            page.copy()
+
+        self._createRSS()
+
+    def _getLinks(self, page, root=False):
+        per_page = self._config.get(["blog", "per-page"], False, 0)
+        if per_page == 0:
+            return ""
+
+        link = ""
+        if not root:
+            link = "../"
+
+        tmp = "<ul>\n"
+        number_of_pages = math.ceil(len(self._entries) / per_page)
+        for i in range(number_of_pages):
+            if i+1 == page:
+                tmp += "<li>" + str(i+1) + "</li>\n"
+            else:
+                tmp += "<li><a href=\"" + link + str(i+1) + "\">" + str(i+1) + "</a></li>\n"
+        tmp += "</ul>"
+
+        return tmp
+
+    def _getDirectLink(self, page, root, configname, default, relative=0, first=False, last=False):
+        per_page = self._config.get(["blog", "per-page"], False, 0)
+        if per_page == 0:
+            return ""
+        number_of_pages = math.ceil(len(self._entries) / per_page)
+
+        to_page = 1   # to first page
+        if relative:  # relative to current page
+            to_page = page + relative
+        elif last:    # to last page
+            to_page = number_of_pages
+
+        link = ""
+        if not root:
+            link = "../"
+
+        if per_page == 0 or to_page < 1 or to_page > number_of_pages or page == to_page:
+            return self._config.get(["blog", configname], False, default)
+        else:
+            return "<a href=\"" + link + str(to_page) + "\">" + self._config.get(["blog", configname], False, default) + "</a>"
+
+    def _getHTML(self, origin, page, root):
         user_reps = self._config.get(["variables"], False, [])
         per_page = self._config.get(["blog", "per-page"], False, 0)
 
         start = (page-1)*per_page
         end = page*per_page-1
 
-        if per_page != 0 and start >= len(self._entries):  # No entries for this page
+        if start >= len(self._entries) or (per_page == 0 and page != 1):  # No entries for this page
             return None
 
-        tmp = ""
+        tmp = self.getLayout().useBlogBegin(self._getCommonReps(page, root), user_reps)
         for n, i in enumerate(sorted(self._entries, reverse=True)):
             if (n < start or n > end) and per_page != 0:
                 continue
 
-            tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getReps(i, origin), user_reps)
+            tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getEntryReps(i, origin), user_reps)
             if n != end and n != len(self._entries)-1:  # Last element on page or last element of all entries
                 tmp += self.getLayout().useBlogSeparator(user_reps)
+        tmp += self.getLayout().useBlogEnd(self._getCommonReps(page, root), user_reps)
 
         return tmp
-
-    def copy(self):
-        user_reps = self._config.get(["variables"], False, [])
-        for i in sorted(self._entries, reverse=True):
-            content = self.getLayout().useBlogSingleEntry(self._entries[i][1], self._getReps(i, self._index_page), user_reps)
-            page = Page(self._getTitle(i), None, self._site, self._index_page, True, None, self._config, (content, "md"))
-            page.copy()
-
-        self._createRSS()
 
     def _read(self):
         for f in findFiles(self.getAbsDir()):
@@ -686,7 +740,14 @@ class Blog:
     def _getTitle(self, key):
         return os.path.splitext(os.path.basename(self._entries[key][1]))[0]
 
-    def _getReps(self, key, origin, full_link=False):
+    def _getCommonReps(self, page, root):
+        return {"%PAGELIST%": self._getLinks(page, root),
+                "%PAGEPREV%": self._getDirectLink(page, root, "previous", "<", relative=-1),
+                "%PAGENEXT%": self._getDirectLink(page, root, "next", ">", relative=+1),
+                "%PAGEFIRST%": self._getDirectLink(page, root, "first", "<<", first=True),
+                "%PAGELAST%": self._getDirectLink(page, root, "last", ">>", last=True)}
+
+    def _getEntryReps(self, key, origin, full_link=False):
         return {"%DATE%": key.strftime(self._config.get(["timeformat"])),
                 "%LINK%": self._getLinkTo(key, origin, full_link)}
 
@@ -726,7 +787,7 @@ class Blog:
             f.write('<pubDate>' + self._getRSSDate(datetime.now()) + '</pubDate>\n')
 
             for i in sorted(self._entries, reverse=True):
-                html=self.getLayout().useBlogRSSEntry(self._entries[i][1], self._getReps(i, self._site.getRoot(), True), user_reps)
+                html=self.getLayout().useBlogRSSEntry(self._entries[i][1], self._getEntryReps(i, self._site.getRoot(), True), user_reps)
                 # FIXME: remove HTML
                 f.write('<item>\n')
                 f.write('<title>' + self._RSSencode(self._getRSSTitle(html)) + '</title>\n')
