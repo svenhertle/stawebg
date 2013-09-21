@@ -1,5 +1,9 @@
-* Blog feature (e.g. for news)
-    * Add templates (entry and between two entries)
-    * Create HTML code
-    * Entries per page -> more pages
-    * RSS
+* Keywords:
+    * stawebg version
+    * generation time
+    * url (from stawebg.json)
+    * ...
+* Use return code from markup compiler -> allow warnings from compiler
+* Versioning
+* Make blog templates optional
+* Change fail message for optional configuration
