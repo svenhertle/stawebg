@@ -643,7 +643,7 @@ class Blog:
     def copy(self):
         user_reps = self._config.get(["variables"], False, [])
         for i in sorted(self._entries, reverse=True):
-            content = self.getLayout().useBlogSingleEntry(self._entries[i][1], self._getEntryReps(i, self._index_page), user_reps)
+            content = self.getLayout().useBlogSingleEntry(self._entries[i][1], self._getEntryReps(i, self._index_page, from_subpage=True), user_reps)
             page = Page(self._getTitle(i), None, self._site, self._index_page, True, None, self._config, (content, "md"))
             page.copy()
 
@@ -705,7 +705,7 @@ class Blog:
             if (n < start or n > end) and per_page != 0:
                 continue
 
-            tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getEntryReps(i, origin), user_reps)
+            tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getEntryReps(i, origin, from_subpage=True), user_reps)
             if n != end and n != len(self._entries)-1:  # Last element on page or last element of all entries
                 tmp += self.getLayout().useBlogSeparator(user_reps)
         tmp += self.getLayout().useBlogEnd(self._getCommonReps(page, root), user_reps)
@@ -747,14 +747,16 @@ class Blog:
                 "%PAGEFIRST%": self._getDirectLink(page, root, "first", "<<", first=True),
                 "%PAGELAST%": self._getDirectLink(page, root, "last", ">>", last=True)}
 
-    def _getEntryReps(self, key, origin, full_link=False):
+    def _getEntryReps(self, key, origin, full_link=False, from_subpage=False):
         return {"%DATE%": key.strftime(self._config.get(["timeformat"])),
-                "%LINK%": self._getLinkTo(key, origin, full_link)}
+                "%LINK%": self._getLinkTo(key, origin, full_link, from_subpage)}
 
-    def _getLinkTo(self, key, origin, full=False):
+    def _getLinkTo(self, key, origin, full=False, from_subpage=False):
         tmp = ""
         if full:
             tmp = self._config.get(["url"], False, "") + "/"
+        if from_subpage:
+            tmp = "../"
         return tmp + self._index_page.getLink(origin) + self._getTitle(key)
 
     def _createRSS(self):
