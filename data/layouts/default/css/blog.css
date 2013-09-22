@@ -11,8 +11,22 @@ div.blog h2
 div.bloglist
 {
     text-align:center;
+    color:grey;
 }
 
+div.bloglist a
+{
+    color:black;
+    text-decoration:none;
+}
+
+div.bloglist a:hover,
+div.bloglist a:active
+{
+    text-decoration:underline;
+}
+
+/* List of page numbers */
 div.bloglist ul
 {
     margin:0;
@@ -24,4 +38,12 @@ div.bloglist ul
 div.bloglist ul li
 {
     display: inline;
+    color:black;
+    font-weight:bold;
+}
+
+div.bloglist ul li a
+{
+    display: inline;
+    font-weight:normal;
 }
