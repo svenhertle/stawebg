@@ -631,7 +631,10 @@ class Blog:
         return self._site.getProject().getLayout(layout)
 
     def getPageOne(self, page_obj, template):
-        return template.replace("%BLOG%", self._getHTML(page_obj, 1, True))
+        tmp = self._getHTML(page_obj, 1, True)
+        if not tmp:
+            tmp = ""
+        return template.replace("%BLOG%", tmp)
 
     def createPages(self, parent_page, template):
         if self._config.get(["blog", "per-page"], False, 0) == 0:
