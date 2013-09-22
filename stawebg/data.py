@@ -436,8 +436,8 @@ class Page:
         layout = self._config.get(["layout"], False)
         return self._site.getProject().getLayout(layout)
 
-    def copy(self):
-        reps = {"%ROOT%": self.getRootLink(),
+    def getReps(self):
+        return {"%ROOT%": self.getRootLink(),
                 "%CUR%": self.getCurrentLink(),
                 "%LAYOUT%": self.getLayoutDir(),
                 "%TITLE%": self.getTitle(),
@@ -445,15 +445,17 @@ class Page:
                 "%SITESUBTITLE%": self._site.getSiteSubtitle(),
                 "%MENU%": self._site.createMenu(self),
                 "%URL%": self._config.get(["url"], False, "")}
+
+    def copy(self):
         user_reps = self._config.get(["variables"], False, [])
 
         # regular file
         output = ""
         content = ""
         if not self._content:
-            output, content = self.getLayout().useTemplate(self._absSrc, reps, user_reps)
+            output, content = self.getLayout().useTemplate(self._absSrc, self.getReps(), user_reps)
         else:
-            output, content = self.getLayout().useTemplate(self._content[0], reps, user_reps, self._content[1])
+            output, content = self.getLayout().useTemplate(self._content[0], self.getReps(), user_reps, self._content[1])
 
         if self._blog:
             output = self._blog.getPageOne(self, output)
@@ -755,8 +757,11 @@ class Blog:
                 "%PAGELAST%": self._getDirectLink(page, root, "last", ">>", last=True)}
 
     def _getEntryReps(self, key, page_obj, full_link=False):
-        return {"%DATE%": key.strftime(self._config.get(["timeformat"])),
+        reps = {"%DATE%": key.strftime(self._config.get(["timeformat"])),
                 "%LINK%": self._getLinkTo(key, page_obj, full_link)}
+        reps.update(page_obj.getReps())
+        reps["%CUR%"] = self._index_page.getLink(page_obj) + "/" + self.getDir() + "/" + os.path.relpath(os.path.dirname(self._entries[key][1]), self.getAbsDir()) + "/"
+        return reps
 
     def _getLinkTo(self, key, page_obj, full=False):
         tmp = ""
