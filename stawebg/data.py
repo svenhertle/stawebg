@@ -770,7 +770,7 @@ class Blog:
         tmp = ""
         if full:
             tmp = self._config.get(["url"], False, "") + "/"
-        return tmp + self._index_page.getLink(page_obj) + self._getTitle(key)
+        return tmp + self._index_page.getLink(page_obj) + "/" + self._getTitle(key)
 
     def _createRSS(self):
         if not self._config.get(["blog", "rss"], False):
