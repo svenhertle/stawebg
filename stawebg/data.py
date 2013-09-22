@@ -398,7 +398,7 @@ class Site:
 
 
 class Page:
-    def __init__(self, name, absPath, site, parent, hidden, blog, config, content=None):
+    def __init__(self, name, absPath, site, parent, hidden, blog, config):
         self._name = name
         self._absSrc = absPath
         self._site = site
@@ -407,12 +407,15 @@ class Page:
         self._subpages = []
         self._blog = blog
         self._config = config
-        self._content = content
+        self._content = None
 
         self._site.delFromFileIndex(self._getDestFile())
 
         if self._blog and isIndex(self._absSrc, self._site):
             self._blog.setIndexPage(self)
+
+    def setContent(self, content, extension):
+        self._content = (content, extension)
 
     def appendPage(self, p):
         self._subpages.append(p)
@@ -625,28 +628,30 @@ class Blog:
         layout = self._config.get(["layout"], False)
         return self._site.getProject().getLayout(layout)
 
-    def getPageOne(self, origin, template):
-        return template.replace("%BLOG%", self._getHTML(origin, 1, True))
+    def getPageOne(self, page_obj, template):
+        return template.replace("%BLOG%", self._getHTML(page_obj, 1, True))
 
-    def createPages(self, origin, template):
+    def createPages(self, parent_page, template):
         if self._config.get(["blog", "per-page"], False, 0) == 0:
             return
 
         page_number = 1
         while True:
-            tmp = self._getHTML(origin, page_number, False)
+            page = Page(str(page_number), None, self._site, parent_page, True, None, self._config)
+            tmp = self._getHTML(page, page_number, False)
             if not tmp:
                 return
             content = template.replace("%BLOG%", tmp)
-            page = Page(str(page_number), None, self._site, origin, True, None, self._config, (content, "html"))
+            page.setContent(content, "html")
             page.copy()
             page_number += 1
 
     def copy(self):
         user_reps = self._config.get(["variables"], False, [])
         for i in sorted(self._entries, reverse=True):
-            content = self.getLayout().useBlogSingleEntry(self._entries[i][1], self._getEntryReps(i, self._index_page, from_subpage=True), user_reps)
-            page = Page(self._getTitle(i), None, self._site, self._index_page, True, None, self._config, (content, "md"))
+            page = Page(self._getTitle(i), None, self._site, self._index_page, True, None, self._config)
+            content = self.getLayout().useBlogSingleEntry(self._entries[i][1], self._getEntryReps(i, page), user_reps)
+            page.setContent(content, "md")
             page.copy()
 
         self._createRSS()
@@ -692,7 +697,7 @@ class Blog:
         else:
             return "<a href=\"" + link + str(to_page) + "\">" + self._config.get(["blog", configname], False, default) + "</a>"
 
-    def _getHTML(self, origin, page, root):
+    def _getHTML(self, page_obj, page, root):
         user_reps = self._config.get(["variables"], False, [])
         per_page = self._config.get(["blog", "per-page"], False, 0)
 
@@ -707,7 +712,7 @@ class Blog:
             if (n < start or n > end) and per_page != 0:
                 continue
 
-            tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getEntryReps(i, origin, from_subpage=True), user_reps)
+            tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getEntryReps(i, page_obj), user_reps)
             if n != end and n != len(self._entries)-1:  # Last element on page or last element of all entries
                 tmp += self.getLayout().useBlogSeparator(user_reps)
         tmp += self.getLayout().useBlogEnd(self._getCommonReps(page, root), user_reps)
@@ -749,17 +754,15 @@ class Blog:
                 "%PAGEFIRST%": self._getDirectLink(page, root, "first", "<<", first=True),
                 "%PAGELAST%": self._getDirectLink(page, root, "last", ">>", last=True)}
 
-    def _getEntryReps(self, key, origin, full_link=False, from_subpage=False):
+    def _getEntryReps(self, key, page_obj, full_link=False):
         return {"%DATE%": key.strftime(self._config.get(["timeformat"])),
-                "%LINK%": self._getLinkTo(key, origin, full_link, from_subpage)}
+                "%LINK%": self._getLinkTo(key, page_obj, full_link)}
 
-    def _getLinkTo(self, key, origin, full=False, from_subpage=False):
+    def _getLinkTo(self, key, page_obj, full=False):
         tmp = ""
         if full:
             tmp = self._config.get(["url"], False, "") + "/"
-        if from_subpage:
-            tmp = "../"
-        return tmp + self._index_page.getLink(origin) + self._getTitle(key)
+        return tmp + self._index_page.getLink(page_obj) + self._getTitle(key)
 
     def _createRSS(self):
         if not self._config.get(["blog", "rss"], False):
