@@ -297,7 +297,7 @@ class Site:
                 except OSError as e:
                     print("\tError: " + str(e))
 
-    def _readHelper(self, dir_path, parent, dir_hidden=False, page_config=None):
+    def _readHelper(self, dir_path, parent, dir_hidden=False, blog_data_dir=False, page_config=None):
         index_rename = None
         if page_config:
             index_rename = page_config.get(["files", "rename",
@@ -311,54 +311,56 @@ class Site:
         entries = sorted(os.listdir(dir_path))
         blog = None
 
-        if "stawebg.json" in entries:
-            tmp_config = Config(os.path.join(dir_path, "stawebg.json"),
-                                Config.directory_struct)
-            page_config = Config.merge(page_config, tmp_config, False)
-
-        # Add layout to list -> copy later
-        layout = self._project.getLayout(page_config.get(["layout"], False))
-        if layout not in self._layouts:
-            self._layouts.append(layout)
-
-        # Create blog, if there is config for it
-        if page_config.get(["blog"], False):
-            blog = Blog(dir_path, page_config, self)
-
-        # First we have to find the index file in this directory…
         idx = None
-        for f in entries:
-            absf = os.path.join(dir_path, f)
-            if isFile(absf) and isCont(absf, self) and isIndex(absf, self):
+        if not blog_data_dir:
+            if "stawebg.json" in entries:
+                tmp_config = Config(os.path.join(dir_path, "stawebg.json"),
+                                    Config.directory_struct)
+                page_config = Config.merge(page_config, tmp_config, False)
+
+            # Add layout to list -> copy later
+            layout = self._project.getLayout(page_config.get(["layout"], False))
+            if layout not in self._layouts:
+                self._layouts.append(layout)
+
+            # Create blog, if there is config for it
+            if page_config.get(["blog"], False):
+                blog = Blog(dir_path, page_config, self)
+
+            # First we have to find the index file in this directory…
+            idx = None
+            for f in entries:
+                absf = os.path.join(dir_path, f)
+                if isFile(absf) and isCont(absf, self) and isIndex(absf, self):
+                    if index_rename:
+                        page_config.add(["files", "rename", f], index_rename)
+                    idx = Page(os.path.split(dir_path)[1], absf, self, parent,
+                               dir_hidden or isHidden(absf, self, page_config),
+                               blog, page_config)
+                    entries.remove(f)
+                    break
+            # …or create an empty page as index
+            if not idx:
+                dirname = os.path.split(dir_path)[1]
                 if index_rename:
-                    page_config.add(["files", "rename", f], index_rename)
-                idx = Page(os.path.split(dir_path)[1], absf, self, parent,
-                           dir_hidden or isHidden(absf, self, page_config),
-                           blog, page_config)
-                entries.remove(f)
-                break
-        # …or create an empty page as index
-        if not idx:
-            dirname = os.path.split(dir_path)[1]
-            if index_rename:
-                page_config.add(["files", "rename", None], index_rename)
-            idx = Page(dirname, None, self, parent, dir_hidden or
-                       isHidden(dirname, self, page_config), blog, page_config)
+                    page_config.add(["files", "rename", None], index_rename)
+                idx = Page(dirname, None, self, parent, dir_hidden or
+                           isHidden(dirname, self, page_config), blog, page_config)
 
-        if parent:
-            parent.appendPage(idx)
-        else:
-            self._root = idx
-
-        # Sort entries as specified in configuration
-        sorted_entries = page_config.get(["files", "sort"], False, [])
-        for s in reversed(sorted_entries):
-            absf = os.path.join(dir_path, s)
-            if not s in entries:
-                print("\tFile not found (specified in sort): " + absf)
+            if parent:
+                parent.appendPage(idx)
             else:
-                entries.remove(s)
-                entries.insert(0, s)
+                self._root = idx
+
+            # Sort entries as specified in configuration
+            sorted_entries = page_config.get(["files", "sort"], False, [])
+            for s in reversed(sorted_entries):
+                absf = os.path.join(dir_path, s)
+                if not s in entries:
+                    print("\tFile not found (specified in sort): " + absf)
+                else:
+                    entries.remove(s)
+                    entries.insert(0, s)
 
         # Make absolute paths and check if it's a page
         for f in entries:
@@ -366,19 +368,19 @@ class Site:
             if isExcluded(absf, self, page_config):
                 continue
             hidden = dir_hidden or isHidden(absf, self, page_config)
+            new_blog_data_dir = blog_data_dir or (blog and os.path.samefile(absf, blog.getAbsDir()))
 
-            # Is data dir of blog
-            if blog and os.path.samefile(absf, blog.getAbsDir()):
-                continue
             # Content file -> Page
-            elif isFile(absf) and isCont(absf, self):
+            if isFile(absf) and isCont(absf, self):
+                if new_blog_data_dir:
+                    continue
                 print("\tFound page: " + absf)
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
                                     hidden, blog, page_config))
             # Directory -> Go inside
             elif os.path.isdir(absf):
                 print("\tFound dir:  " + absf)
-                self._readHelper(absf, idx, hidden, page_config.copy())
+                self._readHelper(absf, idx, hidden, new_blog_data_dir, page_config.copy())
             # Unknown object
             else:
                 tmp = OtherFile(self.getAbsSrcPath(),
