@@ -18,6 +18,7 @@ class Config:
                      "markup": ("mapping",
                                 (str, (list, str, True), True),
                                 True),
+                     "layout": (str, None, True),
                      "locale" : (str, None, True),
                      "timeformat" : (str, None, True),
                      "timezone" : (str, None, True),
