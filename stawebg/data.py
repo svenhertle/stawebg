@@ -498,11 +498,7 @@ class Page:
         return '' if self._absSrc and isIndex(self._absSrc, self._site) else '../'
 
     def getLayoutDir(self):
-        tmp = self.getRootLink()
-        if len(tmp):
-            tmp += "/"
-        tmp += self.getLayout().getSubdir() + "/"
-        return tmp
+        return self.getRootLink() + self.getLayout().getSubdir() + "/"
 
     def getLink(self, origin=None):
         tmp = ""
@@ -517,7 +513,7 @@ class Page:
         tmp = origin.getRootLink() + tmp
 
         if tmp == "":
-            tmp = "."
+            tmp = "./"
 
         return tmp
 
@@ -770,7 +766,7 @@ class Blog:
         tmp = ""
         if full:
             tmp = self._config.get(["url"], False, "") + "/"
-        return tmp + self._index_page.getLink(page_obj) + "/" + self._getTitle(key)
+        return tmp + self._index_page.getLink(page_obj) + self._getTitle(key)
 
     def _createRSS(self):
         if not self._config.get(["blog", "rss"], False):
