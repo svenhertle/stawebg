@@ -18,6 +18,7 @@
     {
         "COPYRIGHT": "Sven Hertle"
     },
+    "delete-old": false,
     "locale": "en_GB",
     "timeformat": "%d %B %Y, %H:%M",
     "timezone": "+0200"

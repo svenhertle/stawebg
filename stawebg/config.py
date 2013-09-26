@@ -18,6 +18,7 @@ class Config:
                      "markup": ("mapping",
                                 (str, (list, str, True), True),
                                 True),
+                     "delete-old": (bool, None, True),
                      "layout": (str, None, True),
                      "locale" : (str, None, True),
                      "timeformat" : (str, None, True),

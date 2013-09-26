@@ -280,22 +280,28 @@ class Site:
             f.copy(self)
 
         # Cleanup
-        # remove files contained in the index
-        for f in self._file_index:
-            print("\tRemove old file: " + f)
-            try:
-                os.remove(f)
-            except OSError as e:
-                print("\tError: " + str(e))
-
-        # Delete empty directories
-        for d in findDirs(self.getAbsDestPath()):
-            if not os.listdir(d):
-                print("\tRemove empty directory: " + d)
+        if self.getConfig(["delete-old"], False, 0):
+            # remove files contained in the index
+            for f in self._file_index:
+                print("\tRemove old file: " + f)
                 try:
-                    os.rmdir(d)
+                    os.remove(f)
                 except OSError as e:
                     print("\tError: " + str(e))
+
+            # Delete empty directories
+            for d in findDirs(self.getAbsDestPath()):
+                if not os.listdir(d):
+                    print("\tRemove empty directory: " + d)
+                    try:
+                        os.rmdir(d)
+                    except OSError as e:
+                        print("\tError: " + str(e))
+        elif len(self._file_index) != 0:
+            # Print old files
+            print("This are old files:")
+            for f in self._file_index:
+                print("\t" + f)
 
     def _readHelper(self, dir_path, parent, dir_hidden=False, blog_data_dir=False, page_config=None):
         index_rename = None
