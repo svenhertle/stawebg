@@ -450,6 +450,9 @@ class Page:
                 "%SITETITLE%": self._site.getSiteTitle(),
                 "%SITESUBTITLE%": self._site.getSiteSubtitle(),
                 "%MENU%": self._site.createMenu(self),
+                "%VERSION%": version,
+                "%GENERATIONTIME%": datetime.now().strftime(self._config.get(["timeformat"], False, "%c")),
+                "%GENERATIONYEAR%": datetime.now().strftime("%Y"),
                 "%URL%": self._config.get(["url"], False, "")}
 
     def copy(self):
