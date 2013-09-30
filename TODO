@@ -1,9 +1,4 @@
-* Keywords:
-    * stawebg version
-    * generation time
-    * url (from stawebg.json)
-    * ...
+* More keywords?
 * Use return code from markup compiler -> allow warnings from compiler
 * Versioning
 * Make blog templates optional
-* Change fail message for optional configuration

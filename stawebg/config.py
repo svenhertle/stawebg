@@ -96,7 +96,7 @@ class Config:
 
             if not config:
                 if do_fail:
-                    fail("Can't find " + str(key))
+                    fail("Can't find config: " + '.'.join(key))
                 else:
                     return default
 
