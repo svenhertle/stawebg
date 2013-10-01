@@ -184,9 +184,15 @@ class Layout:
         tool = config.get(ext)
 
         if tool:
-            out, err = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE).communicate(text.encode())
-            if len(err):
+            try:
+                p = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            except PermissionError as e:
+                fail(' '.join(tool) + ": " + str(e))
+            out, err = p.communicate(text.encode())
+            if p.returncode:
                 fail(' '.join(tool) + ": " + err.decode())
+            if len(err):
+                print("Warning from " + ' '.join(tool) + ": " + err.decode())
             return out.decode()
         return text
 
