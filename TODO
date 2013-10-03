@@ -2,3 +2,6 @@
 * Use return code from markup compiler -> allow warnings from compiler
 * Versioning
 * Make blog templates optional
+* Blog (optionally):
+    * don't print every page in page list
+    * shorten text (preview)
