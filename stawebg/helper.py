@@ -86,8 +86,11 @@ def cutStr(text, length):
 
 def matchList(string, regex_lst):
     for r in regex_lst:
-        if re.match(r, string):
-            return True
+        try:
+            if re.match(r, string):
+                return True
+        except Error as e:
+            fail("Error in regular expression \"" + r + "\": " + str(e))
 
     return False
 
