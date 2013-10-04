@@ -89,7 +89,7 @@ def matchList(string, regex_lst):
         try:
             if re.match(r, string):
                 return True
-        except Error as e:
+        except re.error as e:
             fail("Error in regular expression \"" + r + "\": " + str(e))
 
     return False
