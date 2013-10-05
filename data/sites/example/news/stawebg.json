@@ -3,6 +3,7 @@
     {
         "dir": "data",
         "per-page": 2,
+        "max-pages": 5,
         "rss":
         {
             "file": "news.rss",

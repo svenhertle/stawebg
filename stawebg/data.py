@@ -674,6 +674,7 @@ class Blog:
 
     def _getLinks(self, page, root=False):
         per_page = self._config.get(["blog", "per-page"], False, 0)
+        max_pages = self._config.get(["blog", "max-pages"], False, 0)
         if per_page == 0:
             return ""
 
@@ -681,13 +682,19 @@ class Blog:
         if not root:
             link = "../"
 
-        tmp = "<ul>\n"
         number_of_pages = math.ceil(len(self._entries) / per_page)
-        for i in range(number_of_pages):
-            if i+1 == page:
-                tmp += "<li>" + str(i+1) + "</li>\n"
+        start = 1
+        end = number_of_pages
+        if max_pages != 0:
+            start = max(page - math.floor(max_pages / 2), 1)
+            end = min(start + max_pages - 1, number_of_pages)
+
+        tmp = "<ul>\n"
+        for i in range(start, end+1):
+            if i == page:
+                tmp += "<li>" + str(i) + "</li>\n"
             else:
-                tmp += "<li><a href=\"" + link + str(i+1) + "\">" + str(i+1) + "</a></li>\n"
+                tmp += "<li><a href=\"" + link + str(i) + "\">" + str(i) + "</a></li>\n"
         tmp += "</ul>"
 
         return tmp

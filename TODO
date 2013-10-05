@@ -2,5 +2,4 @@
 * Versioning
 * Make blog templates optional
 * Blog (optionally):
-    * don't print every page in page list
     * shorten text (preview)
