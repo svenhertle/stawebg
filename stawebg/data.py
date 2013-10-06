@@ -24,11 +24,13 @@ isHidden = lambda f, site, c: matchList(matchPath(f, site), c.get(['files', 'hid
 
 
 class Project:
-    def __init__(self, project_dir="", test=False):
+    def __init__(self, project_dir="", test=False, output=None):
         self._sites = []
         self._layouts = {}
         self._root_dir = project_dir
         self._test = test
+        self._other_output = output
+        print("!!!" + str(output))
 
         self._config = Config(os.path.join(self._root_dir, "stawebg.json"),
                               Config.global_struct)
@@ -74,7 +76,9 @@ class Project:
         return layout
 
     def getOutputDir(self):
-        if self._test:
+        if self._other_output:
+            return self._other_output
+        elif self._test:
             return self.getConfig(["dirs", "test"])
         else:
             return self.getConfig(["dirs", "out"])
