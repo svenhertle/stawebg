@@ -1,4 +1,12 @@
-* Versioning
+Until 1.0
+
 * Make blog templates optional
+* Fix clean up of empty directories
+* Config: umask for new files
+* Improve versioning?
+
+
+Later
+
 * Blog (optionally):
     * shorten text (preview)

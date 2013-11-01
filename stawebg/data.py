@@ -30,7 +30,6 @@ class Project:
         self._root_dir = project_dir
         self._test = test
         self._other_output = output
-        print("!!!" + str(output))
 
         self._config = Config(os.path.join(self._root_dir, "stawebg.json"),
                               Config.global_struct)
