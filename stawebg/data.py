@@ -782,7 +782,8 @@ class Blog:
 
     def _getEntryReps(self, key, page_obj, full_link=False):
         reps = {"%DATE%": key.strftime(self._config.get(["timeformat"], False, "%c")),
-                "%LINK%": self._getLinkTo(key, page_obj, full_link)}
+                "%LINK%": self._getLinkTo(key, page_obj, full_link),
+                "%BLOGENTRYTITLE%": self._entries[key][0]}
         reps.update(page_obj.getReps())
         reps["%CUR%"] = self._index_page.getLink(page_obj) + "/" + self.getDir() + "/" + os.path.relpath(os.path.dirname(self._entries[key][1]), self.getAbsDir()) + "/"
         return reps
