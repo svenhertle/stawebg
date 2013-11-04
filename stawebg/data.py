@@ -775,10 +775,10 @@ class Blog:
 
     def _getCommonReps(self, page, root):
         return {"%PAGELIST%": self._getLinks(page, root),
-                "%PAGEPREV%": self._getDirectLink(page, root, "previous", "<", relative=-1),
-                "%PAGENEXT%": self._getDirectLink(page, root, "next", ">", relative=+1),
-                "%PAGEFIRST%": self._getDirectLink(page, root, "first", "<<", first=True),
-                "%PAGELAST%": self._getDirectLink(page, root, "last", ">>", last=True)}
+                "%PAGEPREV%": self._getDirectLink(page, root, "previous", "&lt;", relative=-1),
+                "%PAGENEXT%": self._getDirectLink(page, root, "next", "&gt;", relative=+1),
+                "%PAGEFIRST%": self._getDirectLink(page, root, "first", "&lt;&lt;", first=True),
+                "%PAGELAST%": self._getDirectLink(page, root, "last", "&gt;&gt;", last=True)}
 
     def _getEntryReps(self, key, page_obj, full_link=False):
         reps = {"%DATE%": key.strftime(self._config.get(["timeformat"], False, "%c")),
