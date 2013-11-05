@@ -567,7 +567,7 @@ class Page:
 
         # Create HTML Code
         found = False
-        tmp = "<ul>\n"
+        tmp = ""
         for p in items:
             if p == cur_page:
                 found = True
@@ -586,7 +586,7 @@ class Page:
             if not p.isRoot() and p._pageIsInPathTo(cur_page) and not last:
                 tmp += p.createMenu(cur_page, found)
 
-        return tmp + "</ul>\n"
+        return "<ul>\n" + tmp + "</ul>\n" if tmp else ""
 
     def _pageIsInPathTo(self, dest):
         parent = dest
