@@ -615,8 +615,9 @@ class OtherFile:
         mkdir(out_dir)
 
         site.delFromFileIndex(out_file)
-        shutil.copy(os.path.join(self._src_path_root, self._src_path_rel),
-                    os.path.join(out_dir, os.path.basename(self._src_path_rel)))
+        shutil.copyfile(os.path.join(self._src_path_root, self._src_path_rel),
+                        os.path.join(out_dir,
+                                     os.path.basename(self._src_path_rel)))
 
 class Blog:
     def __init__(self, dir, config, site):
