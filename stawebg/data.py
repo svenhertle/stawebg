@@ -48,7 +48,6 @@ class Project:
         # Add all layouts to list
         for name in listFolders(self.getConfig(['dirs', 'layouts'])):
             self._layouts[name] = Layout(self, name)
-            self._layouts[name].read()
 
         # Add all site directories to list
         for s in listFolders(self.getConfig(['dirs', 'sites'])):
@@ -103,12 +102,12 @@ class Layout:
 
         print("Found layout: " + self._name)
 
-    def read(self):
         # Check if template files exist and read them
         for i in self._files:
-            if not isFile(self._files[i]):
-                fail("Error in template \"" + self._name + "\":" + self._files[i] + " does not exist")
-            self._templates[i] = self._readFile(self._files[i])
+            try:
+                self._templates[i] = open(self._files[i]).read()
+            except IOError as e:
+                fail("Error reading \"" + self._files[i] + "\": " + str(e))
 
         # Search other files (CSS, images, ...)
         for f in findFiles(self._dir, [".html"]):
@@ -147,12 +146,6 @@ class Layout:
         text = self._removeHTML(self._translateMarkup(src))
         text = self.replaceKeywords(text, self._transformUserReps(user_reps))
         return self.replaceKeywords(text, reps)
-
-    def _readFile(self, src):
-        try:
-            return open(src).read()
-        except IOError as e:
-            fail("Error reading \"" + src + "\": " + str(e))
 
     def createOutput(self, dest, text):  # TODO: move to helper.py?, use for other files too?
         mkdir(os.path.dirname(dest))
