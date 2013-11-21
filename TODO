@@ -4,6 +4,8 @@ Until 1.0
 * Fix clean up of empty directories
 * Config: umask for new files
 * Improve versioning?
+* Write manpage
+* Update documentation
 
 
 Later
