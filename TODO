@@ -12,3 +12,4 @@ Later
 
 * Blog (optionally):
     * shorten text (preview)
+* Option: --force-delete sets delete-old on true
