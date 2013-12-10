@@ -292,13 +292,18 @@ class Site:
                     print("\tError: " + str(e))
 
             # Delete empty directories
-            for d in findDirs(self.getAbsDestPath()):
-                if not os.listdir(d):
-                    print("\tRemove empty directory: " + d)
-                    try:
-                        os.rmdir(d)
-                    except OSError as e:
-                        print("\tError: " + str(e))
+            while True:
+                deleted = False
+                for d in findDirs(self.getAbsDestPath()):
+                    if not os.listdir(d):
+                        deleted = True
+                        print("\tRemove empty directory: " + d)
+                        try:
+                            os.rmdir(d)
+                        except OSError as e:
+                            print("\tError: " + str(e))
+                if not deleted:
+                    break
         elif len(self._file_index) != 0:
             # Print old files
             print("This are old files:")
