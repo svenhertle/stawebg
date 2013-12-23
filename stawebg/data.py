@@ -184,6 +184,8 @@ class Layout:
                 p = Popen(tool, stdin=PIPE, stdout=PIPE, stderr=PIPE)
             except PermissionError as e:
                 fail(' '.join(tool) + ": " + str(e))
+            except FileNotFoundError as e:
+                fail(' '.join(tool) + ": " + str(e))
             out, err = p.communicate(text.encode())
             if p.returncode:
                 fail(' '.join(tool) + ": " + err.decode())
