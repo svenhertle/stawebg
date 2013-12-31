@@ -1,8 +1,7 @@
-Until 1.0
+Until 0.1-rc1
 
 * Make blog templates optional
 * Config: umask for new files
-* Improve versioning?
 * Write manpage
 * Update documentation
 * Create minimal example
@@ -10,6 +9,9 @@ Until 1.0
 
 Later
 
-* Blog (optionally):
-    * shorten text (preview)
-* Option: --force-delete sets delete-old on true
+* Plugin System (blog, gallery, ...)
+    * Interpreter: one output file
+    * Plugin: more output files
+    * Use file extension to select interpreter/plugin
+* Old files: ignore, show, delete
+* Option: --force-delete
