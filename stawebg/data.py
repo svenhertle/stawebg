@@ -122,26 +122,6 @@ class Layout:
         text = self._prepareTemplate("template", user_reps, reps, content)
         return (text, content)
 
-    def useBlogEntry(self, src, reps, user_reps):
-        return self._prepareTemplate("entry", user_reps, reps, self._translateMarkup(src))
-
-    def useBlogSeparator(self, user_reps):
-        return self._prepareTemplate("separator", user_reps, [], "")
-
-    def useBlogSingleEntry(self, src, reps, user_reps):
-        return self._prepareTemplate("singleentry", user_reps, reps, self._translateMarkup(src))
-
-    def useBlogBegin(self, reps, user_reps):
-        return self._prepareTemplate("begin", user_reps, reps, "")
-
-    def useBlogEnd(self, reps, user_reps):
-        return self._prepareTemplate("end", user_reps, reps, "")
-
-    def useBlogRSSEntry(self, src, reps, user_reps):
-        text = self._removeHTML(self._translateMarkup(src))
-        text = self.replaceKeywords(text, self._transformUserReps(user_reps))
-        return self.replaceKeywords(text, reps)
-
     def createOutput(self, dest, text):  # TODO: move to helper.py?, use for other files too?
         mkdir(os.path.dirname(dest))
 
