@@ -92,11 +92,6 @@ class Layout:
 
         self._files = {}
         self._files["template"] = os.path.join(self._dir, 'template.html')
-        self._files["entry"] = os.path.join(self._dir, 'blog', 'entry.html')
-        self._files["separator"] = os.path.join(self._dir, 'blog', 'separator.html')
-        self._files["begin"] = os.path.join(self._dir, 'blog', 'begin.html')
-        self._files["end"] = os.path.join(self._dir, 'blog', 'end.html')
-        self._files["singleentry"] = os.path.join(self._dir, 'blog', 'singleentry.html')
 
         self._templates = {}
 
@@ -312,70 +307,63 @@ class Site:
             for f in self._file_index:
                 print("\t" + f)
 
-    def _readHelper(self, dir_path, parent, dir_hidden=False, blog_data_dir=False, page_config=None):
+    def _readHelper(self, dir_path, parent, dir_hidden=False, page_config=None):
         index_rename = None
         if page_config:
             index_rename = page_config.get(["files", "rename",
                                             os.path.basename(dir_path)], False)
             page_config.delete(["files", "sort"], False)
             page_config.delete(["files", "rename"], False)
-            page_config.delete(["blog"], False)
         else:
             page_config = self._config
 
         entries = sorted(os.listdir(dir_path))
-        blog = None
 
         idx = None
-        if not blog_data_dir:
-            if "stawebg.json" in entries:
-                tmp_config = Config(os.path.join(dir_path, "stawebg.json"),
-                                    Config.directory_struct)
-                page_config = Config.merge(page_config, tmp_config, False)
+        if "stawebg.json" in entries:
+            tmp_config = Config(os.path.join(dir_path, "stawebg.json"),
+                                Config.directory_struct)
+            page_config = Config.merge(page_config, tmp_config, False)
 
-            # Add layout to list -> copy later
-            layout = self._project.getLayout(page_config.get(["layout"], False))
-            if layout not in self._layouts:
-                self._layouts.append(layout)
+        # Add layout to list -> copy later
+        layout = self._project.getLayout(page_config.get(["layout"], False))
+        if layout not in self._layouts:
+            self._layouts.append(layout)
 
-            # Create blog, if there is config for it
-            if page_config.get(["blog"], False):
-                blog = Blog(dir_path, page_config, self)
-
-            # First we have to find the index file in this directory…
-            idx = None
-            for f in entries:
-                absf = os.path.join(dir_path, f)
-                if isFile(absf) and isCont(absf, self) and isIndex(absf, self):
-                    if index_rename:
-                        page_config.add(["files", "rename", f], index_rename)
-                    idx = Page(os.path.split(dir_path)[1], absf, self, parent,
-                               dir_hidden or isHidden(absf, self, page_config),
-                               blog, page_config)
-                    entries.remove(f)
-                    break
-            # …or create an empty page as index
-            if not idx:
-                dirname = os.path.split(dir_path)[1]
+        # First we have to find the index file in this directory…
+        idx = None
+        for f in entries:
+            absf = os.path.join(dir_path, f)
+            if isFile(absf) and isCont(absf, self) and isIndex(absf, self):
                 if index_rename:
-                    page_config.add(["files", "rename", None], index_rename)
-                idx = Page(dirname, None, self, parent, dir_hidden or
-                           isHidden(dirname, self, page_config), blog, page_config)
+                    page_config.add(["files", "rename", f], index_rename)
+                idx = Page(os.path.split(dir_path)[1], absf, self, parent,
+                           dir_hidden or isHidden(absf, self, page_config),
+                           page_config)
+                entries.remove(f)
+                break
+        # …or create an empty page as index
+        if not idx:
+            dirname = os.path.split(dir_path)[1]
+            if index_rename:
+                page_config.add(["files", "rename", None], index_rename)
+            idx = Page(dirname, None, self, parent, dir_hidden or
+                       isHidden(dirname, self, page_config), page_config)
 
-            if parent:
-                parent.appendPage(idx)
+        if parent:
+            parent.appendPage(idx)
+        else:
+            self._root = idx
+
+        # Sort entries as specified in configuration
+        sorted_entries = page_config.get(["files", "sort"], False, [])
+        for s in reversed(sorted_entries):
+            absf = os.path.join(dir_path, s)
+            if not s in entries:
+                print("\tFile not found (specified in sort): " + absf)
             else:
-                self._root = idx
-
-            # Sort entries as specified in configuration
-            sorted_entries = page_config.get(["files", "sort"], False, [])
-            for s in reversed(sorted_entries):
-                absf = os.path.join(dir_path, s)
-                if not s in entries:
-                    print("\tFile not found (specified in sort): " + absf)
-                else:
-                    entries.remove(s)
-                    entries.insert(0, s)
+                entries.remove(s)
+                entries.insert(0, s)
 
         # Make absolute paths and check if it's a page
         for f in entries:
@@ -383,19 +371,16 @@ class Site:
             if isExcluded(absf, self, page_config):
                 continue
             hidden = dir_hidden or isHidden(absf, self, page_config)
-            new_blog_data_dir = blog_data_dir or (blog and os.path.samefile(absf, blog.getAbsDir()))
 
             # Content file -> Page
             if isFile(absf) and isCont(absf, self):
-                if new_blog_data_dir:
-                    continue
                 print("\tFound page: " + absf)
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
-                                    hidden, blog, page_config))
+                                    hidden, page_config))
             # Directory -> Go inside
             elif os.path.isdir(absf):
                 print("\tFound dir:  " + absf)
-                self._readHelper(absf, idx, hidden, new_blog_data_dir, page_config.copy())
+                self._readHelper(absf, idx, hidden, page_config.copy())
             # Unknown object
             else:
                 tmp = OtherFile(self.getAbsSrcPath(),
@@ -413,21 +398,17 @@ class Site:
 
 
 class Page:
-    def __init__(self, name, absPath, site, parent, hidden, blog, config):
+    def __init__(self, name, absPath, site, parent, hidden, config):
         self._name = name
         self._absSrc = absPath
         self._site = site
         self._hidden = hidden
         self._parent = parent
         self._subpages = []
-        self._blog = blog
         self._config = config
         self._content = None
 
         self._site.delFromFileIndex(self._getDestFile())
-
-        if self._blog and isIndex(self._absSrc, self._site):
-            self._blog.setIndexPage(self)
 
     def setContent(self, content, extension):
         self._content = (content, extension)
@@ -475,19 +456,11 @@ class Page:
         else:
             output, content = self.getLayout().useTemplate(self._content[0], self.getReps(), user_reps, self._content[1])
 
-        if self._blog:
-            output = self._blog.getPageOne(self, output)
-            self._blog.createPages(self, content)
-
         self.getLayout().createOutput(self._getDestFile(), output)
 
         # Copy subpages
         for p in self._subpages:
             p.copy()
-
-        # Copy blog
-        if self._blog and isIndex(self._absSrc, self._site):
-            self._blog.copy()
 
     def _getDestFile(self):
         tmp_path = ""
@@ -618,245 +591,3 @@ class OtherFile:
         shutil.copyfile(os.path.join(self._src_path_root, self._src_path_rel),
                         os.path.join(out_dir,
                                      os.path.basename(self._src_path_rel)))
-
-class Blog:
-    def __init__(self, dir, config, site):
-        self._dir = dir
-        self._config = config
-        self._site = site
-        self._index_page = None
-
-        # Key: datetime object
-        # Value: (title, filename)
-        self._entries = {}
-
-        self._read()
-
-    def setIndexPage(self, index):
-        self._index_page = index
-
-    def getDir(self):
-        return self._config.get(["blog", "dir"])
-
-    def getAbsDir(self):
-        return os.path.join(self._dir, self.getDir())
-
-    def getLayout(self): #NOTE: Copy from Page…
-        layout = self._config.get(["layout"], False)
-        return self._site.getProject().getLayout(layout)
-
-    def getPageOne(self, page_obj, template):
-        tmp = self._getHTML(page_obj, 1, True)
-        if not tmp:
-            tmp = ""
-        return template.replace("%BLOG%", tmp)
-
-    def createPages(self, parent_page, template):
-        if self._config.get(["blog", "per-page"], False, 0) == 0:
-            return
-
-        page_number = 1
-        while True:
-            page = Page(str(page_number), None, self._site, parent_page, True, None, self._config)
-            tmp = self._getHTML(page, page_number, False)
-            if not tmp:
-                return
-            content = template.replace("%BLOG%", tmp)
-            page.setContent(content, "html")
-            page.copy()
-            page_number += 1
-
-    def copy(self):
-        user_reps = self._config.get(["variables"], False, [])
-        for i in sorted(self._entries, reverse=True):
-            page = Page(self._getTitle(i), None, self._site, self._index_page, True, None, self._config)
-            content = self.getLayout().useBlogSingleEntry(self._entries[i][1], self._getEntryReps(i, page), user_reps)
-            page.setContent(content, "md")
-            page.copy()
-
-        self._createRSS()
-
-    def _getLinks(self, page, root=False):
-        per_page = self._config.get(["blog", "per-page"], False, 0)
-        max_pages = self._config.get(["blog", "max-pages"], False, 0)
-        if per_page == 0:
-            return ""
-
-        link = ""
-        if not root:
-            link = "../"
-
-        number_of_pages = math.ceil(len(self._entries) / per_page)
-        start = 1
-        end = number_of_pages
-        if max_pages != 0:
-            start = max(page - math.floor(max_pages / 2), 1)
-            end = min(start + max_pages - 1, number_of_pages)
-
-        tmp = "<ul>\n"
-        for i in range(start, end+1):
-            if i == page:
-                tmp += "<li>" + str(i) + "</li>\n"
-            else:
-                tmp += "<li><a href=\"" + link + str(i) + "\">" + str(i) + "</a></li>\n"
-        tmp += "</ul>"
-
-        return tmp
-
-    def _getDirectLink(self, page, root, configname, default, relative=0, first=False, last=False):
-        per_page = self._config.get(["blog", "per-page"], False, 0)
-        if per_page == 0:
-            return ""
-        number_of_pages = math.ceil(len(self._entries) / per_page)
-
-        to_page = 1   # to first page
-        if relative:  # relative to current page
-            to_page = page + relative
-        elif last:    # to last page
-            to_page = number_of_pages
-
-        link = ""
-        if not root:
-            link = "../"
-
-        if per_page == 0 or to_page < 1 or to_page > number_of_pages or page == to_page:
-            return self._config.get(["blog", configname], False, default)
-        else:
-            return "<a href=\"" + link + str(to_page) + "\">" + self._config.get(["blog", configname], False, default) + "</a>"
-
-    def _getHTML(self, page_obj, page, root):
-        user_reps = self._config.get(["variables"], False, [])
-        per_page = self._config.get(["blog", "per-page"], False, 0)
-
-        start = (page-1)*per_page
-        end = page*per_page-1
-
-        if start >= len(self._entries) or (per_page == 0 and page != 1):  # No entries for this page
-            return None
-
-        tmp = self.getLayout().useBlogBegin(self._getCommonReps(page, root), user_reps)
-        for n, i in enumerate(sorted(self._entries, reverse=True)):
-            if (n < start or n > end) and per_page != 0:
-                continue
-
-            tmp += self.getLayout().useBlogEntry(self._entries[i][1], self._getEntryReps(i, page_obj), user_reps)
-            if n != end and n != len(self._entries)-1:  # Last element on page or last element of all entries
-                tmp += self.getLayout().useBlogSeparator(user_reps)
-        tmp += self.getLayout().useBlogEnd(self._getCommonReps(page, root), user_reps)
-
-        return tmp
-
-    def _read(self):
-        for f in findFiles(self.getAbsDir()):
-            if isCont(f, self._site):
-                # meta = (time, title)
-                meta = self._getMeta(f)
-                if meta:
-                    print("\tFound blog entry: " + f)
-                    self._entries[meta[0]] = (meta[1], f)
-                else:
-                    print("\tWarning: content file with invalid filename for blog: " + f)
-            else:
-                pass # FIXME: OtherFile
-
-    def _getMeta(self, path):
-        filename = os.path.basename(os.path.splitext(path)[0])
-        data = re.match(r"([0-9]{4})-([0-9]{2})-([0-9]{2})-([0-9]{2})-([0-9]{2})-(.+)", filename)
-
-        if not data:
-            return None
-
-        # FIXME: check range of values
-        time = datetime(int(data.group(1)), int(data.group(2)), int(data.group(3)), int(data.group(4)), int(data.group(5)))
-        title = data.group(6)
-        return (time, title)
-
-    def _getTitle(self, key):
-        return os.path.splitext(os.path.basename(self._entries[key][1]))[0]
-
-    def _getCommonReps(self, page, root):
-        return {"%PAGELIST%": self._getLinks(page, root),
-                "%PAGEPREV%": self._getDirectLink(page, root, "previous", "&lt;", relative=-1),
-                "%PAGENEXT%": self._getDirectLink(page, root, "next", "&gt;", relative=+1),
-                "%PAGEFIRST%": self._getDirectLink(page, root, "first", "&lt;&lt;", first=True),
-                "%PAGELAST%": self._getDirectLink(page, root, "last", "&gt;&gt;", last=True)}
-
-    def _getEntryReps(self, key, page_obj, full_link=False):
-        reps = {"%DATE%": key.strftime(self._config.get(["timeformat"], False, "%c")),
-                "%LINK%": self._getLinkTo(key, page_obj, full_link),
-                "%BLOGENTRYTITLE%": self._entries[key][0]}
-        reps.update(page_obj.getReps())
-        reps["%CUR%"] = self._index_page.getLink(page_obj) + "/" + self.getDir() + "/" + os.path.relpath(os.path.dirname(self._entries[key][1]), self.getAbsDir()) + "/"
-        return reps
-
-    def _getLinkTo(self, key, page_obj, full=False):
-        tmp = ""
-        if full:
-            tmp = self._config.get(["url"], False, "") + "/"
-        return tmp + self._index_page.getLink(page_obj) + self._getTitle(key)
-
-    def _createRSS(self):
-        if not self._config.get(["blog", "rss"], False):
-            return
-
-        user_reps = self._config.get(["variables"], False, [])
-        dest = os.path.join(self._site.getAbsDestPath(), self._config.get(["blog", "rss", "file"]))
-        with open(dest, "wt") as f:
-            locale_backup = locale.getlocale(locale.LC_ALL)
-            locale.setlocale(locale.LC_ALL, "en_GB")
-
-            url = self._config.get(["url"], False)
-            if not url:
-                print("\tWarning: No URL given in configuration. Generating invalid RSS feed.")
-                url=""
-
-            f.write('<?xml version="1.0" encoding="utf-8"?>\n')
-            f.write('<rss version="2.0">\n')
-            f.write('<channel>\n')
-            f.write('<title>' + self._RSSencode(self._config.get(["blog", "rss", "title"])) + '</title>\n')
-            f.write('<link>' + self._RSSencode(url) + '</link>\n')
-            f.write('<description>' + self._RSSencode(self._config.get(["blog", "rss", "description"])) + '</description>\n')
-            copyright = self._config.get(["blog", "rss", "copyright"], False)
-            if copyright:
-                f.write('<copyright>' + self._RSSencode(copyright) + '</copyright>\n')
-            if self._config.get(["blog", "rss", "show_generator"], False, True):
-                f.write('<generator>stawebg ' + self._RSSencode(version) + '</generator>\n')
-
-            f.write('<pubDate>' + self._getRSSDate(datetime.now()) + '</pubDate>\n')
-
-            for i in sorted(self._entries, reverse=True):
-                html=self.getLayout().useBlogRSSEntry(self._entries[i][1], self._getEntryReps(i, self._site.getRoot(), True), user_reps)
-                # FIXME: remove HTML
-                f.write('<item>\n')
-                f.write('<title>' + self._RSSencode(self._getRSSTitle(html)) + '</title>\n')
-                f.write('<description>' + self._RSSencode(self._getRSSContent(html)) + '</description>\n')
-                f.write('<link>' + self._RSSencode(url + '/' + self._getLinkTo(i, self._site.getRoot())) + '</link>\n')
-                f.write('<guid>' + self._RSSencode(self._getTitle(i)) + '</guid>\n')
-                f.write('<pubDate>' + self._RSSencode(self._getRSSDate(i)) + '</pubDate>\n')
-                f.write('</item>\n')
-
-            f.write('</channel>\n')
-            f.write('</rss>\n')
-
-            locale.setlocale(locale.LC_ALL, locale_backup)
-
-        self._site.delFromFileIndex(dest)
-
-    def _RSSencode(self, text):
-        return cgi.escape(text).encode('ascii', 'xmlcharrefreplace').decode('utf-8')
-
-    def _getRSSDate(self, data):
-        return data.strftime('%d %b %Y %H:%M') + " " + self._config.get(["timezone"],False, '+0000')
-
-    def _getRSSGroups(self, text, group):
-        #FIXME: ignore empty lines at begin (and at the end)
-        match = re.match(r'(.*?)$[\n\r\t ]*(.*)', text, re.MULTILINE | re.DOTALL)
-        if match:
-            return match.group(group)
-        return ""
-
-    def _getRSSTitle(self, text):
-        return cutStr(self._getRSSGroups(text, 1), self._config.get(["blog", "rss", "title_length"], False, 0))
-
-    def _getRSSContent(self, text):
-        return cutStr(self._getRSSGroups(text, 2), self._config.get(["blog", "rss", "content_length"], False, 0))
