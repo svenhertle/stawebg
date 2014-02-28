@@ -90,6 +90,7 @@ class Layout:
                                  name)
         self._other_files = []
 
+        # TODO: is this list necessary?
         self._files = {}
         self._files["template"] = os.path.join(self._dir, 'template.html')
 
@@ -119,7 +120,13 @@ class Layout:
 
     def useTemplate(self, src, reps, user_reps, ext=None):
         content = self._translateMarkup(src, ext)
-        text = self._prepareTemplate("template", user_reps, reps, content)
+
+        text = self._templates["template"][:]
+        text = self.replaceKeywords(text, self._transformUserReps(user_reps))
+        text = text.replace("%CONTENT%", content)
+        text = self.replaceKeywords(text, self._transformUserReps(user_reps))
+        text = self.replaceKeywords(text, reps)
+
         return (text, content)
 
     def createOutput(self, dest, text):  # TODO: move to helper.py?, use for other files too?
@@ -176,17 +183,6 @@ class Layout:
         trans = lambda m: reps[m.group(0)]
         rc = re.compile('|'.join(map(re.escape, reps)))
         return rc.sub(trans, text)
-
-    def _prepareTemplate(self, name, user_reps, reps, content):
-        # User reps -> content -> user reps -> reps
-        text = self._templates[name][:]
-        text = self.replaceKeywords(text, self._transformUserReps(user_reps))
-        text = text.replace("%CONTENT%", content)
-        text = self.replaceKeywords(text, self._transformUserReps(user_reps))
-        return self.replaceKeywords(text, reps)
-
-    def _removeHTML(self, text):
-        return re.sub('<.*?>', '', text)
 
     def _transformUserReps(self, reps):
         result = {}
@@ -345,7 +341,7 @@ class Site:
                 entries.remove(s)
                 entries.insert(0, s)
 
-        # Make absolute paths and check if it's a page
+        # Make absolute paths and check if it's a content page or excludes
         for f in entries:
             absf = os.path.join(dir_path, f)
             if isExcluded(absf, self, page_config):
