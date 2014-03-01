@@ -1,9 +1,6 @@
 #!/usr/bin/python3
 
-import cgi
-import errno
 import locale
-import math
 import os
 import re
 import shutil
@@ -11,7 +8,7 @@ from datetime import datetime
 from subprocess import Popen, PIPE
 from stawebg.config import Config
 from stawebg.helper import (listFolders, findFiles, findDirs, fail, matchList,
-                            cleverCapitalize, cutStr, mkdir)
+                            cleverCapitalize, mkdir)
 
 version = "0.1-dev"
 
@@ -136,7 +133,7 @@ class Layout:
             outf = open(dest, 'w')
             outf.write(text)
             outf.close()
-        except IOError as e: #TODO: check exceptions
+        except IOError as e:  # TODO: check exceptions
             fail("Error creating " + dest + ": " + str(e))
 
     def _translateMarkup(self, src, ext=None):
