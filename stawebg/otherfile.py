@@ -1,14 +1,9 @@
 #!/usr/bin/python3
 
-import locale
 import os
-import re
 import shutil
-from datetime import datetime
-from subprocess import Popen, PIPE
-from stawebg.config import Config
-from stawebg.helper import (listFolders, findFiles, findDirs, fail, matchList,
-                            cleverCapitalize, mkdir)
+from stawebg.helper import mkdir
+
 
 class OtherFile:
     """ Copy other file """

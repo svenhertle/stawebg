@@ -2,20 +2,15 @@
 
 import locale
 import os
-import re
-import shutil
-from datetime import datetime
-from subprocess import Popen, PIPE
 from stawebg.config import Config
-from stawebg.helper import (listFolders, findFiles, findDirs, fail, matchList,
-                            cleverCapitalize, mkdir)
+from stawebg.helper import (listFolders, fail)
+from stawebg.layout import Layout
+from stawebg.site import Site
 
-from site import Site
-from layout import Layout
 
 class Project:
+    """A project is a collection of sites and layouts"""
     def __init__(self, project_dir="", test=False, output=None):
-        # list of all sites and layouts
         self._sites = []
         self._layouts = {}
 
@@ -23,6 +18,7 @@ class Project:
         self._test = test
         self._other_output = output
 
+        # Read global config from stawebg.json
         self._config = Config(os.path.join(self._root_dir, "stawebg.json"),
                               Config.global_struct)
 
@@ -33,9 +29,11 @@ class Project:
 
         # Set locale
         try:
-            locale.setlocale(locale.LC_ALL, self.getConfig(["locale"], False, ""))
+            locale.setlocale(locale.LC_ALL, self.getConfig(["locale"],
+                             False, ""))
         except locale.Error as e:
-            fail("Failed to set the locale \"" + self.getConfig(["locale"], False, "") + "\": " + str(e))
+            fail("Failed to set the locale \"" +
+                 self.getConfig(["locale"], False, "") + "\": " + str(e))
 
         # Add all layouts to list
         for name in listFolders(self.getConfig(['dirs', 'layouts'])):
@@ -45,7 +43,6 @@ class Project:
         for s in listFolders(self.getConfig(['dirs', 'sites'])):
             site = Site(s, self)
             self._sites.append(site)
-            site.read()
 
         # copy files to out dir
         for s in self._sites:

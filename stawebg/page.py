@@ -1,14 +1,10 @@
 #!/usr/bin/python3
 
-import locale
 import os
-import re
-import shutil
 from datetime import datetime
-from subprocess import Popen, PIPE
-from stawebg.config import Config
-from stawebg.helper import (listFolders, findFiles, findDirs, fail, matchList,
-                            cleverCapitalize, mkdir)
+from stawebg.helper import (cleverCapitalize, isIndex)
+from stawebg.version import version
+
 
 class Page:
     def __init__(self, name, absPath, site, parent, hidden, config):
@@ -46,6 +42,7 @@ class Page:
         return self._site.getProject().getLayout(layout)
 
     def getReps(self):
+        timeformat = self._config.get(["timeformat"], False, "%c")
         return {"%ROOT%": self.getRootLink(),
                 "%CUR%": self.getCurrentLink(),
                 "%LAYOUT%": self.getLayoutDir(),
@@ -54,7 +51,7 @@ class Page:
                 "%SITESUBTITLE%": self._site.getSiteSubtitle(),
                 "%MENU%": self._site.createMenu(self),
                 "%VERSION%": version,
-                "%GENERATIONTIME%": datetime.now().strftime(self._config.get(["timeformat"], False, "%c")),
+                "%GENERATIONTIME%": datetime.now().strftime(timeformat),
                 "%GENERATIONYEAR%": datetime.now().strftime("%Y"),
                 "%URL%": self._config.get(["url"], False, "")}
 
@@ -65,9 +62,14 @@ class Page:
         output = ""
         content = ""
         if not self._content:
-            output, content = self.getLayout().useTemplate(self._absSrc, self.getReps(), user_reps)
+            output, content = self.getLayout().useTemplate(self._absSrc,
+                                                           self.getReps(),
+                                                           user_reps)
         else:
-            output, content = self.getLayout().useTemplate(self._content[0], self.getReps(), user_reps, self._content[1])
+            output, content = self.getLayout().useTemplate(self._content[0],
+                                                           self.getReps(),
+                                                           user_reps,
+                                                           self._content[1])
 
         self.getLayout().createOutput(self._getDestFile(), output)
 
@@ -86,7 +88,8 @@ class Page:
         if not self.isRoot():
             tmp_path = os.path.join(tmp_path, self.getName())
 
-        return os.path.join(self._site.getAbsDestPath(), tmp_path, "index.html")
+        return os.path.join(self._site.getAbsDestPath(), tmp_path,
+                            "index.html")
 
     def getRootLink(self):
         tmp = ""
@@ -99,7 +102,10 @@ class Page:
         return tmp
 
     def getCurrentLink(self):
-        return '' if self._absSrc and isIndex(self._absSrc, self._site) else '../'
+        if self._absSrc and isIndex(self._absSrc, self._site):
+            return ''
+        else:
+            return '../'
 
     def getLayoutDir(self):
         return self.getRootLink() + self.getLayout().getSubdir() + "/"
@@ -142,7 +148,8 @@ class Page:
             else:
                 return self._site.getSiteTitle() + " > " + self.getShortTitle()
         else:
-            return self.getParent().getTitle(True) + " > " + self.getShortTitle()
+            return self.getParent().getTitle(True) + " > " + \
+                self.getShortTitle()
 
     def createMenu(self, cur_page, last=False):
         items = self._subpages[:]
@@ -162,7 +169,8 @@ class Page:
                 continue
 
             active = ""
-            if p._pageIsInPathTo(cur_page) and (not p.isRoot() or p == cur_page):
+            if p._pageIsInPathTo(cur_page) and \
+                    (not p.isRoot() or p == cur_page):
                 active = " class=\"active\""
 
             tmp = ''.join([tmp, "<li><a href=\"", p.getLink(cur_page), "\"",

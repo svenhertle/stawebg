@@ -3,8 +3,7 @@
 import argparse
 import os
 from stawebg.project import Project
-
-version = "0.1-dev"
+from stawebg.version import version
 
 def run():
     parser = argparse.ArgumentParser(description="static website generator")

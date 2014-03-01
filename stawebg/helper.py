@@ -5,15 +5,6 @@ import os
 import re
 import sys
 
-# from old data.py
-
-isFile = lambda f: os.path.isfile(f)
-matchPath = lambda f, c: os.path.abspath(f)[len(os.path.abspath(c.getAbsSrcPath()))+1:]
-isIndex = lambda f, site: matchList(matchPath(f, site), site.getConfig(['files', 'index']))
-isCont = lambda f, site: matchList(matchPath(f, site), site.getConfig(['files', 'content']))
-isExcluded = lambda f, site, c: matchList(matchPath(f, site), c.get(['files', 'exclude'], False, []))
-isHidden = lambda f, site, c: matchList(matchPath(f, site), c.get(['files', 'hidden'], False, []))
-
 #
 # File IO
 #
@@ -88,11 +79,13 @@ def cleverCapitalize(text):
     else:
         return text[0].upper() + text[1:]
 
+
 # TODO: old, needed for RSS?
 def cutStr(text, length):
     if length == 0 or len(text) <= length:
         return text
     return text[0:length-4] + "..."
+
 
 def matchList(string, regex_lst):
     for r in regex_lst:
@@ -103,6 +96,39 @@ def matchList(string, regex_lst):
             fail("Error in regular expression \"" + r + "\": " + str(e))
 
     return False
+
+#
+# Recognition of file types
+#
+
+
+def isFile(f):
+    return os.path.isfile(f)
+
+
+def isIndex(f, site):
+    if not (isFile(f) and isCont(f, site)):
+        return False
+
+    return matchList(matchPath(f, site), site.getConfig(['files', 'index']))
+
+
+def isCont(f, site):
+    return matchList(matchPath(f, site), site.getConfig(['files', 'content']))
+
+
+def isExcluded(f, site, c):
+    return matchList(matchPath(f, site), c.get(['files', 'exclude'],
+                                               False, []))
+
+
+def isHidden(f, site, c):
+    return matchList(matchPath(f, site), c.get(['files', 'hidden'], False, []))
+
+
+def matchPath(f, c):
+    return os.path.abspath(f)[len(os.path.abspath(c.getAbsSrcPath()))+1:]
+
 
 #
 # Debug and errors

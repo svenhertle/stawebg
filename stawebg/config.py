@@ -20,9 +20,9 @@ class Config:
                                 True),
                      "delete-old": (bool, None, True),
                      "layout": (str, None, True),
-                     "locale" : (str, None, True),
-                     "timeformat" : (str, None, True),
-                     "timezone" : (str, None, True),
+                     "locale": (str, None, True),
+                     "timeformat": (str, None, True),
+                     "timezone": (str, None, True),
                      "variables": ("mapping",
                                    (str, str, True),
                                    True)}
@@ -35,9 +35,9 @@ class Config:
                                     "content": (list, str, True),
                                     "hidden": (list, str, True),
                                     "exclude": (list, str, True)}, True),
-                   "locale" : (str, None, True),
-                   "timeformat" : (str, None, True),
-                   "timezone" : (str, None, True),
+                   "locale": (str, None, True),
+                   "timeformat": (str, None, True),
+                   "timezone": (str, None, True),
                    "url": (str, None, True),
                    "variables": ("mapping",
                                  (str, str, True),
@@ -50,8 +50,8 @@ class Config:
                                    "rename": ("mapping", (str, str), True)},
                                   True),
                         "variables": ("mapping",
-                                       (str, str, True),
-                                       True)}
+                                      (str, str, True),
+                                      True)}
 
     def __init__(self, filename, struct, displayname=None):
         self._config = {}

@@ -1,14 +1,11 @@
 #!/usr/bin/python3
 
-import locale
 import os
 import re
-import shutil
-from datetime import datetime
 from subprocess import Popen, PIPE
-from stawebg.config import Config
-from stawebg.helper import (listFolders, findFiles, findDirs, fail, matchList,
-                            cleverCapitalize, mkdir)
+from stawebg.helper import (findFiles, fail, mkdir)
+from stawebg.otherfile import OtherFile
+
 
 class Layout:
     def __init__(self, project, name):
@@ -57,7 +54,8 @@ class Layout:
 
         return (text, content)
 
-    def createOutput(self, dest, text):  # TODO: move to helper.py?, use for other files too?
+    def createOutput(self, dest, text):
+        # TODO: move to helper.py?, use for other files too?
         mkdir(os.path.dirname(dest))
 
         try:
