@@ -12,6 +12,13 @@ Contents:
    :maxdepth: 2
 
    project
+   layout
+   site
+   page
+   otherfile
+   config
+   helper
+   version
 
 Indices and tables
 ==================
@@ -19,4 +26,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
