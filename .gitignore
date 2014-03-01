@@ -4,4 +4,6 @@
 /data/test
 /data/sites/test*
 
+/doc/build/*
+
 *.swp

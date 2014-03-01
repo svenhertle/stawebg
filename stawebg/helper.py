@@ -5,6 +5,15 @@ import os
 import re
 import sys
 
+# from old data.py
+
+isFile = lambda f: os.path.isfile(f)
+matchPath = lambda f, c: os.path.abspath(f)[len(os.path.abspath(c.getAbsSrcPath()))+1:]
+isIndex = lambda f, site: matchList(matchPath(f, site), site.getConfig(['files', 'index']))
+isCont = lambda f, site: matchList(matchPath(f, site), site.getConfig(['files', 'content']))
+isExcluded = lambda f, site, c: matchList(matchPath(f, site), c.get(['files', 'exclude'], False, []))
+isHidden = lambda f, site, c: matchList(matchPath(f, site), c.get(['files', 'hidden'], False, []))
+
 #
 # File IO
 #
@@ -79,6 +88,7 @@ def cleverCapitalize(text):
     else:
         return text[0].upper() + text[1:]
 
+# TODO: old, needed for RSS?
 def cutStr(text, length):
     if length == 0 or len(text) <= length:
         return text
