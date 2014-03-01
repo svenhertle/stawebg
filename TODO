@@ -1,17 +1,13 @@
 Until 0.1-rc1
 
-* Make blog templates optional
-* Config: umask for new files
-* Write manpage
-* Update documentation
-* Create minimal example
-
-
-Later
-
+* Refactor layout
 * Plugin System (blog, gallery, ...)
     * Interpreter: one output file
     * Plugin: more output files
     * Use file extension to select interpreter/plugin
+* Config: umask for new files
+* Write manpage
+* Update documentation
+* Create minimal example
 * Old files: ignore, show, delete
-* Option: --force-delete
+* Option: --force-delete for show mode
