@@ -1,7 +1,8 @@
-stawebg.layout
+stawebg.helper
 ==============
 
-.. automodule:: stawebg.layout
+.. automodule:: stawebg.helper
     :members:
     :undoc-members:
     :private-members:
+    :special-members:

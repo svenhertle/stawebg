@@ -7,14 +7,29 @@ from stawebg.helper import mkdir
 
 
 class OtherFile:
-    """ Copy other file """
+    """ Copy other file (no content like text). """
     def __init__(self, src_path_root, src_path_rel, dest_dir=None):
-        """ src_path_root / src_path_rel ==> dest_dir / src_path_rel """
+        """ The constructor sets the default destination for the file.
+
+        src_path_root / src_path_rel ==> dest_dir / src_path_rel
+
+        .. todo:: add description of parameters
+        """
         self._src_path_root = src_path_root
         self._src_path_rel = src_path_rel
         self._dest_dir = dest_dir
 
     def copy(self, site, to=None):
+        """ Copy file to output directory.
+
+        :param site: Site that contains this file.
+        :type site: stawebg.site.Site
+
+        :param to: Change destination.
+        :type to: str
+
+        .. todo:: check if parameter to is necessary
+        """
         if not to:
             to = self._dest_dir
 

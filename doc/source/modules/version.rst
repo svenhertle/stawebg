@@ -5,3 +5,4 @@ stawebg.version
     :members:
     :undoc-members:
     :private-members:
+    :special-members:
