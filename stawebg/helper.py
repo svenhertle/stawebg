@@ -149,31 +149,92 @@ def matchList(string, regex_lst):
 # Recognition of file types
 #
 
-def isIndex(f, site):
-    if not isCont(f, site):
+def isIndex(filename, site):
+    """ Checks if file is an index file.
+
+    :param filename: Filename to check
+    :type filename: str
+
+    :param site: Relevant site (for configuration)
+    :type site: :class:`stawebg.site.Site`
+
+    :rtype: bool
+    """
+    if not isCont(filename, site):
         return False
 
-    return matchList(matchPath(f, site), site.getConfig(['files', 'index']))
+    return matchList(matchPath(filename, site), site.getConfig(['files', 'index']))
 
 
-def isCont(f, site):
-    if not os.path.isfile(f):
+def isCont(filename, site):
+    """ Checks if file is content for the page
+    (text that will be converted to HTML).
+
+    :param filename: Filename to check
+    :type filename: str
+
+    :param site: Relevant site (for configuration)
+    :type site: :class:`stawebg.site.Site`
+
+    :rtype: bool
+    """
+    if not os.path.isfile(filename):
         return False
 
-    return matchList(matchPath(f, site), site.getConfig(['files', 'content']))
+    return matchList(matchPath(filename, site), site.getConfig(['files', 'content']))
 
 
-def isExcluded(f, site, c):
-    return matchList(matchPath(f, site), c.get(['files', 'exclude'],
-                                               False, []))
+def isExcluded(filename, site, config):
+    """ Checks if file is excluded by current configuration.
+
+    :param filename: Filename to check
+    :type filename: str
+
+    :param site: Relevant site (for configuration)
+    :type site: :class:`stawebg.site.Site`
+
+    :param config: Configuration that contains exclude rules.
+    :type config: :class:`stawebg.config.Config`
+
+    :rtype: bool
+    """
+    exclude_list = config.get(['files', 'exclude'], False, [])
+    return matchList(matchPath(filename, site), exclude_list)
 
 
-def isHidden(f, site, c):
-    return matchList(matchPath(f, site), c.get(['files', 'hidden'], False, []))
+def isHidden(filename, site, config):
+    """ Checks if file is hidden by current configuration.
+
+    :param filename: Filename to check
+    :type filename: str
+
+    :param site: Relevant site (for configuration)
+    :type site: :class:`stawebg.site.Site`
+
+    :param config: Configuration that contains hidden rules.
+    :type config: :class:`stawebg.config.Config`
+
+    :rtype: bool
+    """
+    hidden_list = config.get(['files', 'hidden'], False, [])
+    return matchList(matchPath(filename, site), hidden_list)
 
 
-def matchPath(f, c):
-    return os.path.abspath(f)[len(os.path.abspath(c.getAbsSrcPath()))+1:]
+def matchPath(filename, site):
+    """ Get relative path of filename to source path of site.
+
+    :param filename: Filename which relative path should be returned
+    :type filename: str
+
+    :param site: Relevant site (for source path)
+    :type site: :class:`stawebg.site.Site`
+
+    :rtype: str
+    """
+    abs_filename = os.path.abspath(filename)
+    abs_src_path = os.path.abspath(site.getAbsSrcPath())
+    return os.path.relpath(abs_filename, abs_src_path)
+    #return os.path.abspath(filename)[len(os.path.abspath(site.getAbsSrcPath()))+1:]
 
 
 #
@@ -182,5 +243,10 @@ def matchPath(f, c):
 
 
 def fail(text):
+    """ Print error message and exit with return code 1.
+
+    :param text: Error message.
+    :type text: str
+    """
     sys.stderr.write(text + os.linesep)
     sys.exit(1)
