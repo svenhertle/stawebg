@@ -55,6 +55,17 @@ class Config:
                                       True)}
 
     def __init__(self, filename, struct, displayname=None):
+        """ Read configuration file.
+
+        :param filename: Filename of configuration file.
+        :type filename: str
+
+        :param struct: Structure that describes configuration.
+        :type struct: `global_config`, `site_config` or  `directory_config`
+
+        :param dislayname: Name of configuration file for error messages.
+        :type displayname: str
+        """
         self._config = {}
 
         if displayname:
@@ -76,6 +87,20 @@ class Config:
                 fail("Can't open file: " + filename + os.linesep + str(e))
 
     def get(self, key, do_fail=True, default=None):
+        """ Get option from configuration.
+
+        :param key: Key of config option.
+        :type key: list of strings
+
+        :param do_fail: Print error message and exit if option is not found in
+                        configuration file.
+        :type do_fail: bool
+
+        :param default: Default value if option is not found.
+        :type default: type of expected value.
+
+        :return: value of option
+        """
         config = self._config
         for k in key:
             config = config.get(k)
@@ -89,6 +114,14 @@ class Config:
         return config
 
     def delete(self, key, do_fail=False):
+        """ Delete option.
+
+        :param key: Key of config option.
+        :type key: list of strings
+
+        :param do_fail: Print error message and exit if option is not found in
+                        configuration file.
+        """
         data = self.get(key[:-1], do_fail)
 
         if key[-1] in data:
@@ -97,6 +130,13 @@ class Config:
             fail("Can't find " + str(key))
 
     def add(self, key, value):
+        """ Add option.
+
+        :param key: Key of config option.
+        :type key: list of strings
+
+        :param value: Value of config option.
+        """
         config = self._config
         for n, k in enumerate(key):
             if config.get(k):
@@ -109,9 +149,20 @@ class Config:
                     config = config[k]
 
     def copy(self):
+        """ Make a complete copy of configuration.
+
+        :rtype: :class:`stawebg.config.Config`
+        """
         return deepcopy(self)
 
     def _checkDict(self, obj, struct):
+        """ Check config which is a dictionary.
+
+        :param obj: Configuration from file
+        :type obj: dict
+
+        :param struct: Corresponding struct that defines configuration.
+        """
         if not struct:
             return obj
 
@@ -165,6 +216,16 @@ class Config:
         return result
 
     def _checkList(self, lst, typeof, name):
+        """ Check config which is a list.
+
+        :param lst: List from file
+        :type obj: list
+
+        :param typeof: Expected type of list items.
+
+        :param name: Name of the list for error message.
+        :type name: str
+        """
         if type(lst) != list:
             fail(name + " should be a list in file " + self._displayname)
         for i in lst:
@@ -173,11 +234,23 @@ class Config:
                      self._displayname + " have a wrong type")
 
     def _checkMapping(self, mapping, typeof, name):
+        """ Check config which is a mapping (python: dictionary).
+
+        Mapping: type1 -> type2
+        type1 must be primitive
+
+        :param mapping: Configuration from file
+        :type obj: dict
+
+        :param typeof: Expected type of items.
+        :type typeof: (type1, type2)
+
+        :param name: Name of the list for error message.
+        :type name: str
+        """
         if type(mapping) != dict:
             fail(name + " must be a dictionary")
         # View all entries
-        # Mapping: type1 -> type2
-        # type1 must be primitive
         for i in mapping:
             # Check type1
             if type(i) == typeof[0]:

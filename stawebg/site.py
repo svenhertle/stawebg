@@ -10,7 +10,16 @@ from stawebg.page import Page
 
 
 class Site:
+    """ This class represents a site (pages and other files). """
     def __init__(self, name, project):
+        """ Read site config and content.
+
+        :param name: Name of site.
+        :type name: str
+
+        :param project: Corresponding project.
+        :type project: :class:`stawebg.project.Project`
+        """
         self._project = project
         self._name = name
         self._root = None
@@ -38,27 +47,66 @@ class Site:
         self._readHelper(self.getAbsSrcPath(), self._root)
 
     def getConfig(self, key, fail=True, default=None):
+        """ Get configuration of project.
+
+        :param key: Key of config option.
+        :type key: list of strings
+
+        :param fail: Print error message and exit if option is not found in
+                     configuration file.
+        :type fail: bool
+
+        :param default: Default value if option is not found.
+        :type default: type of expected value.
+
+        :return: value of option
+        """
         return self._config.get(key, fail, default)
 
     def getAbsSrcPath(self):
+        """ Get absolute path of source directory.
+
+        :rtype: str
+        """
         return os.path.join(self.getConfig(['dirs', "sites"]), self._name)
 
     def getAbsDestPath(self):
+        """ Get absolute path of destination directory.
+
+        :rtype: str
+        """
         return os.path.join(self._project.getOutputDir(), self._name)
 
     def getProject(self):
+        """ Get corresponding project.
+
+        :rtype: :class:`stawebg.project.Project`
+        """
         return self._project
 
     def getRoot(self):
+        """ Get root page.
+
+        :rtype: :class:`stawebg.page.Page`
+        """
         return self._root
 
     def getSiteTitle(self):
+        """ Get site title.
+
+        :rtype: str
+        """
         return self.getConfig(["title"], False, self._name)
 
     def getSiteSubtitle(self):
+        """ Get site subtitle.
+
+        :rtype: str
+        """
         return self.getConfig(["subtitle"], False, "")
 
     def copy(self):
+        """ Copy site to destination directory. """
         print("Create site: " + self._name)
 
         # Pages
@@ -103,6 +151,22 @@ class Site:
 
     def _readHelper(self, dir_path, parent, dir_hidden=False,
                     page_config=None):
+        """ Read content and configuration of a site.
+
+        This function is used recursive.
+
+        :param dir_path: Path to look at.
+        :type dir_path: str
+
+        :param parent: Parent page.
+        :type parent: :class:`stawebg.page.Page`
+
+        :param dir_hidden: Is current directory already hidden?
+        :type dir_hidden: bool
+
+        :param page_config: Configuration of the parent directory.
+        :type page_config: :class:`stawebg.config.Config`
+        """
         index_rename = None
         if page_config:
             index_rename = page_config.get(["files", "rename",
@@ -190,8 +254,24 @@ class Site:
                 print("\tFound unkown object: " + absf)
 
     def createMenu(self, cur_page):
+        """ Create menu relative to cur_page.
+
+        :param cur_page: Page where menu is used.
+        :type cur_page: :class:`stawebg.page.Page`
+
+        :rtype: str
+        """
         return self._root.createMenu(cur_page)
 
     def delFromFileIndex(self, path):
+        """ Delete generated file from file index.
+
+        The file index is used to find out which files in the output directory
+        are old. If you don't use this function your new files could be
+        deleted.
+
+        :param path: Path of generated file.
+        :type path: str
+        """
         if path in self._file_index:
             self._file_index.remove(path)
