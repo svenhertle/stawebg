@@ -3,7 +3,7 @@
 
 import os
 from datetime import datetime
-from stawebg.helper import (cleverCapitalize, isIndex)
+from stawebg.helper import isIndex
 from stawebg.version import version
 
 
@@ -140,7 +140,7 @@ class Page:
         elif not self.getParent():
             return "Home"
         else:
-            return cleverCapitalize(self.getName())
+            return self.getName().capitalize()
 
     def getTitle(self, no_home=False):
         if not self.getParent():

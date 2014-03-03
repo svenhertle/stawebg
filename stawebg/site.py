@@ -3,7 +3,7 @@
 
 import os
 from stawebg.config import Config
-from stawebg.helper import (findFiles, findDirs, fail, isFile, isIndex,
+from stawebg.helper import (findFiles, findDirs, fail, isIndex,
                             isHidden, isExcluded, isCont)
 from stawebg.otherfile import OtherFile
 from stawebg.page import Page
@@ -173,7 +173,7 @@ class Site:
             hidden = dir_hidden or isHidden(absf, self, page_config)
 
             # Content file -> Page
-            if isFile(absf) and isCont(absf, self):
+            if isCont(absf, self):
                 print("\tFound page: " + absf)
                 idx.appendPage(Page(os.path.splitext(f)[0], absf, self, idx,
                                     hidden, page_config))
