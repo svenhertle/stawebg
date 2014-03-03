@@ -150,7 +150,7 @@ def matchList(string, regex_lst):
 #
 
 def isIndex(f, site):
-    if isCont(f, site):
+    if not isCont(f, site):
         return False
 
     return matchList(matchPath(f, site), site.getConfig(['files', 'index']))
