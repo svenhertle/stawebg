@@ -4,6 +4,10 @@
 /data/test
 /data/sites/test*
 
+/dist/*
+/build/*
+/MANIFEST
+
 /doc/build/*
 
 *.swp

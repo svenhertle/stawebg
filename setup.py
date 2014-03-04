@@ -12,7 +12,7 @@ import distutils.command.install_scripts
 import shutil
 import sys
 from distutils.core import setup
-from stawebg.data import version
+from stawebg.version import version
 
 # Exit, if python version is 2
 if sys.version_info.major != 3:

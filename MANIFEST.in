@@ -4,3 +4,6 @@ include MANIFEST.in
 
 graft data
 prune data/out
+
+graft doc
+prune doc/build
