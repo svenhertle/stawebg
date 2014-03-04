@@ -39,9 +39,9 @@ class Layout:
 
     def copy(self, dest, site):
         for f in self._other_files:
-            f.copy(site, os.path.join(dest, self.getSubdir()))
+            f.copy(site, os.path.join(dest, self.getOutputDir()))
 
-    def getSubdir(self):
+    def getOutputDir(self):
         return os.path.join("style", self._name)
 
     def useTemplate(self, src, reps, user_reps, ext=None):
