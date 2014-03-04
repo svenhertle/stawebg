@@ -3,7 +3,7 @@
 
 import os
 from datetime import datetime
-from stawebg.helper import isIndex
+from stawebg.helper import (isIndex, createFile)
 from stawebg.version import version
 
 
@@ -125,7 +125,7 @@ class Page:
                                                            user_reps,
                                                            self._content[1])
 
-        self.getLayout().createOutput(self._getDestFile(), output)
+        createFile(self._getDestFile(), output)
 
         # Copy subpages
         for p in self._subpages:

@@ -9,7 +9,16 @@ from stawebg.otherfile import OtherFile
 
 
 class Layout:
+    """ One layout für a page. """
     def __init__(self, project, name):
+        """ Read template.
+
+        :param project: stawebg project.
+        :type project: :class:`stawebg.project.Project`
+
+        :param name: Name of layout
+        :type name: str
+        """
         self._project = project
         self._name = name
         self._dir = os.path.join(self._project.getConfig(['dirs', 'layouts']),
@@ -37,14 +46,59 @@ class Layout:
             self._other_files.append(OtherFile(self._dir,
                                                os.path.relpath(f, self._dir)))
 
-    def copy(self, dest, site):
+    def copy(self, site):
+        """ Copy layout to output of one site.
+
+        :param site: Site where layout is used.
+        :type site: :class:`stawebg.site.Site`
+        """
         for f in self._other_files:
-            f.copy(site, os.path.join(dest, self.getOutputDir()))
+            path = os.path.join(site.getAbsDestPath(), self.getOutputDir())
+            f.copy(site, path)
 
     def getOutputDir(self):
+        """ Get relative output directory of layout.
+
+        This is the path relative to the document root of the site
+        (e.g. style/default).
+
+        :rtype: str
+        """
         return os.path.join("style", self._name)
 
     def useTemplate(self, src, reps, user_reps, ext=None):
+        """ Create output from source file.
+
+        This contains:
+
+        * Get content from markup interpreter using source
+        * Apply user replacements to template
+        * Replace "%CONTENT%" by content.
+        * Apply user replacements again
+        * Apply stawebg replacements
+
+        src may be a filename or the source code as string.
+        If ext is none, src is interpreted as filename and the file extension
+        comes from the filename. Is ext is specified stawebg uses the
+        corresponding markup interpreter to create HTML.
+
+        :param src: Source for content (filename or source as string,
+                    see above).
+        :type src: str
+
+        :param reps: Replacement from stawebg.
+        :type reps: dict
+
+        :param user_reps: User replacements
+        :type reps: dict
+
+        :param ext: File extension if src is source code.
+        :type ext: str
+
+        :return: Complete output using template and content
+                 (source interpreted by markup interpreter).
+        :rtype: (str, str)
+        """
         content = self._translateMarkup(src, ext)
 
         text = self._templates["template"][:]
@@ -55,18 +109,18 @@ class Layout:
 
         return (text, content)
 
-    def createOutput(self, dest, text):
-        # TODO: move to helper.py?, use for other files too?
-        mkdir(os.path.dirname(dest))
-
-        try:
-            outf = open(dest, 'w')
-            outf.write(text)
-            outf.close()
-        except IOError as e:  # TODO: check exceptions
-            fail("Error creating " + dest + ": " + str(e))
-
     def _translateMarkup(self, src, ext=None):
+        """ Translate source code to HTML with a markup interpreter.
+
+        :param src: Source code
+        :type src: str
+
+        :param ext: File extension used to determine markup interpreter
+                    (see :func:`useTemplate`).
+        :type ext: str
+
+        :rtype: str
+        """
         text = ''
 
         # src is string -> file extension given
@@ -104,6 +158,16 @@ class Layout:
         return text
 
     def replaceKeywords(self, text, reps):
+        """ Replace keywords from dictionary.
+
+        :param text: Text where keywords should be replaced.
+        :type text: str
+
+        :param reps: Dictionary with keyword and replacement.
+        :type reps: dict
+
+        :rtype: str
+        """
         if not reps:
             return text
 
@@ -112,6 +176,16 @@ class Layout:
         return rc.sub(trans, text)
 
     def _transformUserReps(self, reps):
+        """ Create dictionary for further replace operations from configured
+        user replacements.
+
+        This functions changed the keyword from XYZ to %_XYZ%.
+
+        :param reps: User replacements from configuration file.
+        :type reps: dict
+
+        :rtype: dict
+        """
         result = {}
         for i in reps:
             result["%_" + i + "%"] = reps[i]

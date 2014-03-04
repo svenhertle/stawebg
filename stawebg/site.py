@@ -114,7 +114,7 @@ class Site:
 
         # Layouts
         for l in self._used_layouts:
-            l.copy(self.getAbsDestPath(), self)
+            l.copy(self)
 
         # Other files
         for f in self._other_files:

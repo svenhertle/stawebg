@@ -99,6 +99,27 @@ def mkdir(path):
         if e.errno != errno.EEXIST:
             fail(str(e))
 
+def createFile(dest, text):
+    """ Create file an write text to it.
+
+    This function creates also the necessary directories.
+
+    :param dest: Destination file.
+    :type dest: str
+
+    :param text: Content for file.
+    :type text: str
+    """
+    mkdir(os.path.dirname(dest))
+
+    try:
+        outf = open(dest, 'w')
+        outf.write(text)
+        outf.close()
+    except IOError as e:  # TODO: check exceptions
+        fail("Error creating " + dest + ": " + str(e))
+
+
 
 #
 # Strings and Regex
