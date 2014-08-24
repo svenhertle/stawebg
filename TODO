@@ -1,13 +1,48 @@
 Until 0.1-rc1
 
 * Refactor layout
-* Plugin System (blog, gallery, ...)
-    * Interpreter: one output file
-    * Plugin: more output files
-    * Use file extension to select interpreter/plugin
 * Config: umask for new files
 * Write manpage
 * Update documentation
 * Create minimal example
 * Old files: ignore, show, delete
 * Option: --force-delete for show mode
+
+Plugins
+=======
+
+stawebg/plugins/... or data/plugins/...
+
+config:
+    "plugins":
+    {
+        "TEST1":                -> %PLUGIN_TEST1%
+        {
+            "type": "test",     -> test.py
+            "c1": 4,            -> config
+            "c2": "hiafasf"
+        },
+        "TEST2":
+        {
+            "type": "test",
+            "c1": 10,
+            "c2": "hi"
+        }
+    }
+
+    mapping
+    plugin must be registered before config is parsed -> extend config description
+
+index of available plugins (like markup languages)
+
+plugin can request layout files (check for all registered plugins)
+
+replace keywords: find keyword -> request plugin content -> replace keyword
+
+plugin can create Page or OtherFile
+    -> OtherFile is copy of file or (NEW) a plaintext file
+
+plugin class -> can be extended
+    -> simple access to layout...
+    -> create Page
+    -> create OtherFile
